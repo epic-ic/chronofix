@@ -7,11 +7,11 @@
 ## Citation
 
 Last F (2026). *chronofix: What the Package Does (One Line, Title
-Case)*. R package version 0.0.15.
+Case)*. R package version 0.0.16.
 
     @Manual{,
       title = {chronofix: What the Package Does (One Line, Title Case)},
       author = {First Last},
       year = {2026},
-      note = {R package version 0.0.15},
+      note = {R package version 0.0.16},
     }

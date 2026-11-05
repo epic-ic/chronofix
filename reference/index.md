@@ -22,6 +22,8 @@
 
 - [`chronofix_plot_delays()`](https://mrc-ide.github.io/chronofix/reference/chronofix_plot_delays.md)
   : Plot Estimated Delay Distributions
+- [`chronofix_plot_individual()`](https://mrc-ide.github.io/chronofix/reference/chronofix_plot_individual.md)
+  : Plot estimated date distributions for an individual
 
 ### Summarise functions
 
@@ -29,6 +31,8 @@
   : Generate and export highlighted reconstructed linelist
 - [`chronofix_summarise_delays()`](https://mrc-ide.github.io/chronofix/reference/chronofix_summarise_delays.md)
   : Get Summary Table of Estimated Delays
+- [`chronofix_summarise_individual()`](https://mrc-ide.github.io/chronofix/reference/chronofix_summarise_individual.md)
+  : Summarise an individual
 
 ## Simulate data
 
