@@ -1,8 +1,9 @@
 Package: chronofix
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.16
+Version: 0.0.17
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
+    c(person("Ed", "Knock", , "e.knock@imperial.ac.uk", role = c("aut", "cre")),
+      person("Rebecca", "Nash", , "r.nash@imperial.ac.uk", role = c("aut")))
 Description: chronofix is an R package for Bayesian estimation of event dates
  and delay distributions using epidemiological line-list data. It is designed
  to handle commonly encountered issues with line-list datasets during outbreaks,
