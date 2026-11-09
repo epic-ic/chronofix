@@ -4,7 +4,7 @@
 \alias{chronofix_plot_individual}
 \title{Plot estimated date distributions for an individual}
 \usage{
-chronofix_plot_individual(samples, id, min_window = 7, min_prob = 0.01)
+chronofix_plot_individual(samples, id, min_window = 7, share_y_axis = FALSE)
 }
 \arguments{
 \item{samples}{A \code{chronofix_mcmc_samples} object as generated
@@ -16,8 +16,10 @@ by \code{chronofix_mcmc()}}
 observed date in each panel. Panels are wider if the plotted dates
 extend further (default 7)}
 
-\item{min_prob}{Dates with posterior probability below this are not
-shown (default 0.01)}
+\item{share_y_axis}{Logical, indicating whether or not the y-axis
+(representing the posterior probability) is shared across panels. If
+shared across panels then its limits will be \code{c(0, 1)}.
+Default is \code{FALSE}.}
 }
 \value{
 A ggplot object showing the distributions of estimated dates for an

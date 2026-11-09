@@ -9,7 +9,10 @@
 ##' @param min_window Minimum number of days shown either side of the
 ##'   observed date in each panel. Panels are wider if the plotted dates
 ##'   extend further (default 7)
-##' @param share_y_axis Logical  
+##' @param share_y_axis Logical, indicating whether or not the y-axis 
+##'   (representing the posterior probability) is shared across panels. If
+##'   shared across panels then its limits will be `c(0, 1)`.
+##'   Default is `FALSE`.
 ##'   
 ##' @return A ggplot object showing the distributions of estimated dates for an
 ##'  individual
