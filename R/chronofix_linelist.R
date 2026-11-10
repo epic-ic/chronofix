@@ -85,9 +85,7 @@ chronofix_linelist <- function(samples,
   
   results_data[, event_names] <- 
     chronofix_linelist_impute_dates(results_data[, event_names], est_dates_int,
-                                    status_matrix)
-  results_data[, event_names] <- 
-    format(results_data[, event_names], date_format)
+                                    status_matrix, date_format)
   
   for (j in seq_len(n_events)) {
     p_err <- prob_error[, j]
@@ -232,7 +230,8 @@ chronofix_linelist_status_matrix <- function(est_dates,
 
 chronofix_linelist_impute_dates <- function(data_dates,
                                             est_dates_int,
-                                            status_matrix) {
+                                            status_matrix,
+                                            date_format) {
   
   n_events <- ncol(data_dates)
   
@@ -250,6 +249,7 @@ chronofix_linelist_impute_dates <- function(data_dates,
                                              data_dates[i, j])})
       dates[dates_to_change, j] <- int_to_date(new_dates)
     }
+    dates[, j] <- format(dates[, j], date_format)
   }
   
   dates
