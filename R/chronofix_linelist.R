@@ -77,7 +77,7 @@ chronofix_linelist <- function(samples,
   results_data <- data 
   
   status_matrix <- chronofix_linelist_status_matrix(
-    dates = est_dates_int[, , 1],
+    est_dates = est_dates_int[, , 1],
     prob_error = prob_error,
     error_thresholds = error_thresholds
   )
@@ -220,11 +220,11 @@ get_modal_alternative_date <- function(est_dates, obs_date) {
 }
 
 
-chronofix_linelist_status_matrix <- function(dates,
+chronofix_linelist_status_matrix <- function(est_dates,
                                              prob_error,
                                              error_thresholds) {
-  n_individuals <- nrow(dates)
-  n_events <- ncol(dates)
+  n_individuals <- nrow(est_dates)
+  n_events <- ncol(est_dates)
   
   status_matrix <- matrix(
     NA_character_,
@@ -234,7 +234,7 @@ chronofix_linelist_status_matrix <- function(dates,
   
   for (j in seq_len(n_events)) {
     p_err <- prob_error[, j]
-    d <- dates[, j]
+    d <- est_dates[, j]
     
     status_matrix[, j] <- dplyr::case_when(
       is.na(d) ~ "Structurally Missing",

@@ -233,11 +233,11 @@ test_that("chronofix_linelist replicates custom id and group column names", {
 
 
 test_that("chronofix_linelist_status_matrix treats threshold value as Error", {
-  mode_dates_num <- matrix(rep(20000, 6), ncol = 1)
+  est_dates <- matrix(rep(20000, 6), ncol = 1)
   prob_error <- matrix(c(0.04, 0.06, 0.49, 0.51, 0.94, 0.96), ncol = 1)
   
   status <- chronofix_linelist_status_matrix(
-    mode_dates_num = mode_dates_num,
+    est_dates = est_dates,
     prob_error = prob_error,
     error_thresholds = c(0.05, 0.5, 0.95)
   )
@@ -255,7 +255,7 @@ test_that("chronofix_linelist_status_matrix treats threshold value as Error", {
 
 
 test_that("chronofix_linelist_status_matrix classifies date statuses correctly", {
-  mode_dates_num <- matrix(
+  est_dates <- matrix(
     c(
       NA, # structurally missing
       20000, # imputed missing
@@ -280,7 +280,7 @@ test_that("chronofix_linelist_status_matrix classifies date statuses correctly",
   )
   
   status <- chronofix_linelist_status_matrix(
-    mode_dates_num = mode_dates_num,
+    est_dates = est_dates,
     prob_error = prob_error,
     error_thresholds = c(0.05, 0.5, 0.95)
   )
