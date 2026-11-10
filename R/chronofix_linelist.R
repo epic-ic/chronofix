@@ -267,7 +267,9 @@ get_modal_alternative_date <- function(est_dates, obs_date) {
   }
   
   u_est_dates <- unique(est_dates)
-  u_est_dates[which.max(tabulate(match(est_dates, u_est_dates)))]
+  
+  mode_alt <- u_est_dates[which.max(tabulate(match(est_dates, u_est_dates)))]
+  int_to_date(mode_alt)
 }
 
 
