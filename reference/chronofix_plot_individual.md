@@ -6,7 +6,7 @@ single individual.
 ## Usage
 
 ``` r
-chronofix_plot_individual(samples, id, min_window = 7, min_prob = 0.01)
+chronofix_plot_individual(samples, id, min_window = 7, share_y_axis = FALSE)
 ```
 
 ## Arguments
@@ -26,10 +26,11 @@ chronofix_plot_individual(samples, id, min_window = 7, min_prob = 0.01)
   panel. Panels are wider if the plotted dates extend further (default
   7)
 
-- min_prob:
+- share_y_axis:
 
-  Dates with posterior probability below this are not shown (default
-  0.01)
+  Logical, indicating whether or not the y-axis (representing the
+  posterior probability) is shared across panels. If shared across
+  panels then its limits will be `c(0, 1)`. Default is `FALSE`.
 
 ## Value
 

@@ -2,16 +2,18 @@
 
 ## Authors
 
-- **First Last**. Author, maintainer.
+- **Ed Knock**. Author, maintainer.
+
+- **Rebecca Nash**. Author.
 
 ## Citation
 
-Last F (2026). *chronofix: What the Package Does (One Line, Title
-Case)*. R package version 0.0.16.
+Knock E, Nash R (2026). *chronofix: Probabilistic Line List Date
+Correction and Delay Estimation*. R package version 0.0.17.
 
     @Manual{,
-      title = {chronofix: What the Package Does (One Line, Title Case)},
-      author = {First Last},
+      title = {chronofix: Probabilistic Line List Date Correction and Delay Estimation},
+      author = {Ed Knock and Rebecca Nash},
       year = {2026},
-      note = {R package version 0.0.16},
+      note = {R package version 0.0.17},
     }
