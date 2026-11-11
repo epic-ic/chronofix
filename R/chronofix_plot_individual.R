@@ -9,8 +9,10 @@
 ##' @param min_window Minimum number of days shown either side of the
 ##'   observed date in each panel. Panels are wider if the plotted dates
 ##'   extend further (default 7)
-##' @param min_prob Dates with posterior probability below this are not
-##'   shown (default 0.01)
+##' @param share_y_axis Logical, indicating whether or not the y-axis 
+##'   (representing the posterior probability) is shared across panels. If
+##'   shared across panels then its limits will be `c(0, 1)`.
+##'   Default is `FALSE`.
 ##'   
 ##' @return A ggplot object showing the distributions of estimated dates for an
 ##'  individual
@@ -19,7 +21,8 @@
 ##' @importFrom ggtext element_markdown
 ##' 
 ##' @export
-chronofix_plot_individual <- function(samples, id, min_window = 7, min_prob = 0.01) {
+chronofix_plot_individual <- function(samples, id, min_window = 7,
+                                      share_y_axis = FALSE) {
   if (!inherits(samples, "chronofix_mcmc_samples")) {
     cli::cli_abort("Expected 'samples' to be a 'chronofix_mcmc_samples' object")
   }
@@ -50,13 +53,36 @@ chronofix_plot_individual <- function(samples, id, min_window = 7, min_prob = 0.
   observed <- as.Date(unlist(samples$data[which_id, events]))
   n_iter <- ncol(est)
   
+  min_prob <- 0.01
+  
   # Posterior probability mass per day, per event
   df <- do.call(rbind, lapply(events, function(e) {
     tab <- table(est[e, ])
-    data.frame(event = e,
-               date = as.Date(as.numeric(names(tab))),
-               prob = as.numeric(tab) / n_iter)
+    df1 <- data.frame(event = e,
+                      date = as.Date(as.numeric(names(tab))),
+                      prob = as.numeric(tab) / n_iter)
+    if (share_y_axis) {
+      df1$hidden <- df1$prob < min_prob
+    } else {
+      df1$hidden <- df1$prob < min_prob * max(df1$prob)
+    }
+    df1
   }))
+  
+  if (any(df$hidden)) {
+    df <- df[!df$hidden, ]
+    if (share_y_axis) {
+      caption <- 
+        sprintf("Dates with posterior probability < %s not shown.", min_prob)
+    } else {
+      caption <- 
+        sprintf("Dates with probability below %s%% of the panel maximum not shown.",
+                100 * min_prob)
+    }
+  } else {
+    caption <- NULL
+  }
+  
   
   obs_prob <- vapply(seq_along(events), function(i) {
     if (is.na(observed[i])) return(NA_real_)
@@ -79,12 +105,6 @@ chronofix_plot_individual <- function(samples, id, min_window = 7, min_prob = 0.
                    "Less probable than observed" = "#A7C1E1",
                    "No observed date" = "grey60")
   df$category <- factor(df$category, levels = names(bar_colours))
-  
-  hidden <- df$prob < min_prob
-  df <- df[!hidden, ]
-  caption <- if (any(hidden)) {
-    sprintf("Dates with posterior probability < %s not shown.", min_prob)
-  }
   
   legend_keys <- names(bar_colours)[names(bar_colours) != "No observed date" |
                                       any(is.na(observed))]
@@ -117,10 +137,12 @@ chronofix_plot_individual <- function(samples, id, min_window = 7, min_prob = 0.
                       limits = legend_keys, drop = FALSE) +
     scale_x_date(date_labels = date_format,
                  breaks = scales::breaks_pretty(4)) +
-    scale_y_continuous(limits = c(0, 1),
-                       breaks = seq(0, 1, by = 0.25),
-                       expand = expansion(mult = c(0, 0.05))) +
-    facet_wrap(vars(event), scales = "free_x",
+    { if (share_y_axis) {
+      scale_y_continuous(limits = c(0, 1),
+                         breaks = seq(0, 1, by = 0.25),
+                         expand = expansion(mult = c(0, 0.05)))
+    }} +
+    facet_wrap(vars(event), scales = "free",
                labeller = as_labeller(strip_labels)) +
     labs(x = "Date", y = "Posterior Probability",
          title = "Posterior Estimated Date Distributions",

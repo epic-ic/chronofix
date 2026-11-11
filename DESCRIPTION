@@ -1,11 +1,12 @@
 Package: chronofix
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.16
+Title: Probabilistic Line List Date Correction and Delay Estimation
+Version: 0.0.17
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
+    c(person("Ed", "Knock", , "e.knock@imperial.ac.uk", role = c("aut", "cre")),
+      person("Rebecca", "Nash", , "r.nash@imperial.ac.uk", role = c("aut")))
 Description: chronofix is an R package for Bayesian estimation of event dates
- and delay distributions using epidemiological line-list data. It is designed
- to handle commonly encountered issues with line-list datasets during outbreaks,
+ and delay distributions using epidemiological line list data. It is designed
+ to handle commonly encountered issues with line list datasets during outbreaks,
  including missing event dates (e.g., symptom onset, hospitalisation, or death)
  and errors in recorded dates.
 License: MIT + file LICENSE
@@ -28,5 +29,4 @@ Imports:
     scales
 Config/testthat/edition: 3
 Remotes: mrc-ide/monty@mrc-6769
-Config/roxygen2/version: 8.1.0
-RoxygenNote: 7.3.3
+Config/roxygen2/version: 8.1.1

@@ -233,11 +233,11 @@ test_that("chronofix_linelist replicates custom id and group column names", {
 
 
 test_that("chronofix_linelist_status_matrix treats threshold value as Error", {
-  mode_dates_num <- matrix(rep(20000, 6), ncol = 1)
+  est_dates <- matrix(rep(20000, 6), ncol = 1)
   prob_error <- matrix(c(0.04, 0.06, 0.49, 0.51, 0.94, 0.96), ncol = 1)
   
   status <- chronofix_linelist_status_matrix(
-    mode_dates_num = mode_dates_num,
+    est_dates = est_dates,
     prob_error = prob_error,
     error_thresholds = c(0.05, 0.5, 0.95)
   )
@@ -255,7 +255,7 @@ test_that("chronofix_linelist_status_matrix treats threshold value as Error", {
 
 
 test_that("chronofix_linelist_status_matrix classifies date statuses correctly", {
-  mode_dates_num <- matrix(
+  est_dates <- matrix(
     c(
       NA, # structurally missing
       20000, # imputed missing
@@ -280,7 +280,7 @@ test_that("chronofix_linelist_status_matrix classifies date statuses correctly",
   )
   
   status <- chronofix_linelist_status_matrix(
-    mode_dates_num = mode_dates_num,
+    est_dates = est_dates,
     prob_error = prob_error,
     error_thresholds = c(0.05, 0.5, 0.95)
   )
@@ -295,6 +295,68 @@ test_that("chronofix_linelist_status_matrix classifies date statuses correctly",
       "Possible Error",
       "Correct"
     )
+  )
+})
+
+
+test_that("chronofix_linelist_impute_dates imputes dates correctly", {
+  
+  data_dates <- array(
+    c(
+      NA, # structurally missing
+      NA, # imputed missing
+      as.Date("2023-07-01"), # highly likely error
+      as.Date("2023-07-01"), # likely error
+      as.Date("2023-07-01"), # possible error
+      as.Date("2023-07-01") # correct
+    ),
+    c(6, 1)
+  )
+  data_dates <- as.Date(data_dates)
+  
+  est_dates <- array(NA, c(6, 1, 100))
+  est_dates[2, 1, ] <- c(rep("2023-09-15", 30), rep("2023-09-14", 50), 
+                             rep("2023-09-13", 20)) # imputed missing
+  est_dates[3, 1, ] <- c(rep("2023-07-01", 3), rep("2023-10-08", 30), 
+                             rep("2023-10-09", 67)) # highly likely error
+  est_dates[4, 1, ] <- c(rep("2023-07-01", 15), rep("2023-10-08", 30), 
+                             rep("2023-10-09", 55)) # likely error
+  est_dates[5, 1, ] <- c(rep("2023-07-01", 60), rep("2023-10-08", 15), 
+                             rep("2023-10-09", 25)) # possible error
+  est_dates[6, 1, ] <- c(rep("2023-07-01", 97), rep("2023-10-08", 2), 
+                             rep("2023-10-09", 1)) # correct
+  est_dates_int <- date_to_int(est_dates)
+      
+  prob_error <- matrix(
+    c(
+      NA, # structurally missing
+      NA, # imputed missing
+      0.97, # highly likely error
+      0.85, # likely error
+      0.4, # possible error
+      0.03 # correct
+    ),
+    ncol = 1
+  )
+  
+  status_matrix <- chronofix_linelist_status_matrix(
+    est_dates = array(est_dates_int[, , 1], c(6, 1)),
+    prob_error = prob_error,
+    error_thresholds = c(0.05, 0.5, 0.95)
+  )
+  
+  imputed_dates <- chronofix_linelist_impute_dates(data_dates, est_dates_int,
+                                                   status_matrix, "%Y-%m-%d")
+  
+  expect_equal(
+    as.vector(imputed_dates),
+    as.Date(
+      c(NA, # structurally missing, still NA
+      "2023-09-14", # imputed missing
+      "2023-10-09", # highly likely error, changed
+      "2023-07-01", # likely error, unchanged
+      "2023-07-01", # possible error, unchanged
+      "2023-07-01")) # correct, unchanged
   )
 })
 

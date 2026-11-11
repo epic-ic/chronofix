@@ -61,36 +61,34 @@ chronofix_linelist <- function(samples,
     ))
   }
   
-  est_dates_numeric <- samples$augmented_data$estimated_dates
-  error_ind_array <- samples$augmented_data$error_indicators
+  event_names <- setdiff(colnames(data), c(id, group))
+  
+  est_dates_int <- 
+    floor(samples$augmented_data$estimated_dates[, event_names, ])
+  error_ind_array <- samples$augmented_data$error_indicators[, event_names, ]
   
   # calculate posterior summaries - mean across iterations/chains for error
   # and mode across iterations/chains for dates
   # floor applied to convert to corresponding integer for each date
   prob_error <- apply(error_ind_array, c(1, 2), mean, na.rm = FALSE)
-  mode_dates_num <- apply(floor(est_dates_numeric), c(1, 2), get_mode)
   
   n_individuals <- dim(error_ind_array)[1]
   n_events <- dim(error_ind_array)[2]
   
-  event_names <- setdiff(colnames(data), c(id, group))
-  
-  results_data <- data.frame(id = data[[id]],
-                             group = data[[group]]) 
-  results_data <- setNames(results_data, c(id, group))
+  results_data <- data 
   
   status_matrix <- chronofix_linelist_status_matrix(
-    mode_dates_num = mode_dates_num,
+    est_dates = est_dates_int[, , 1],
     prob_error = prob_error,
     error_thresholds = error_thresholds
   )
   
+  results_data[, event_names] <- 
+    chronofix_linelist_impute_dates(results_data[, event_names], est_dates_int,
+                                    status_matrix, date_format)
+  
   for (j in seq_len(n_events)) {
-    new_date <- 
-      format(as.Date(mode_dates_num[, j], origin = "1970-01-01"), date_format)
     p_err <- prob_error[, j]
-    
-    results_data[[event_names[j]]] <- new_date
     results_data[[paste0(event_names[j], "_p_error")]] <- round(p_err, 3)
   }
   
@@ -196,20 +194,12 @@ chronofix_linelist <- function(samples,
   
 }
 
-#' @importFrom stats na.omit
-get_mode <- function(x) {
-  x <- stats::na.omit(x)
-  if (length(x) == 0) return(NA)
-  ux <- unique(x)
-  ux[which.max(tabulate(match(x, ux)))]
-}
 
-
-chronofix_linelist_status_matrix <- function(mode_dates_num,
+chronofix_linelist_status_matrix <- function(est_dates,
                                              prob_error,
                                              error_thresholds) {
-  n_individuals <- nrow(mode_dates_num)
-  n_events <- ncol(mode_dates_num)
+  n_individuals <- nrow(est_dates)
+  n_events <- ncol(est_dates)
   
   status_matrix <- matrix(
     NA_character_,
@@ -218,11 +208,11 @@ chronofix_linelist_status_matrix <- function(mode_dates_num,
   )
   
   for (j in seq_len(n_events)) {
-    new_date <- as.Date(mode_dates_num[, j], origin = "1970-01-01")
     p_err <- prob_error[, j]
+    d <- est_dates[, j]
     
     status_matrix[, j] <- dplyr::case_when(
-      is.na(new_date) ~ "Structurally Missing",
+      is.na(d) ~ "Structurally Missing",
       is.na(p_err) ~ "Imputed Missing",
       p_err >= error_thresholds[1] & p_err < error_thresholds[2] ~ "Possible Error",
       p_err >= error_thresholds[2] & p_err < error_thresholds[3] ~ "Likely Error",
@@ -232,6 +222,51 @@ chronofix_linelist_status_matrix <- function(mode_dates_num,
   }
   
   status_matrix
+}
+
+
+chronofix_linelist_impute_dates <- function(data_dates,
+                                            est_dates_int,
+                                            status_matrix,
+                                            date_format) {
+  
+  n_events <- ncol(data_dates)
+  
+  dates <- data_dates
+  
+  for (j in seq_len(n_events)) {
+    dates_to_change <- 
+      which(status_matrix[, j] %in% c("Highly Likely Error", "Imputed Missing"))
+    
+    if (length(dates_to_change) > 0) {
+      new_dates <- 
+        vnapply(dates_to_change, 
+                function(i) {
+                  get_modal_alternative_date(est_dates_int[i, j, ],
+                                             data_dates[i, j])})
+      dates[dates_to_change, j] <- int_to_date(new_dates)
+    }
+    dates[, j] <- format(dates[, j], date_format)
+  }
+  
+  dates
+}
+
+
+get_modal_alternative_date <- function(est_dates, obs_date) {
+  if(all(is.na(est_dates))) {
+    return(NA)
+  }
+  
+  if (!is.na(obs_date)) {
+    obs_date <- date_to_int(obs_date)
+    est_dates <- est_dates[est_dates != obs_date]
+  }
+  
+  u_est_dates <- unique(est_dates)
+  
+  mode_alt <- u_est_dates[which.max(tabulate(match(est_dates, u_est_dates)))]
+  int_to_date(mode_alt)
 }
 
 
