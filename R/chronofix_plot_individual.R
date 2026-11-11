@@ -69,8 +69,6 @@ chronofix_plot_individual <- function(samples, id, min_window = 7,
     df1
   }))
   
-  caption <- NULL
-  
   if (any(df$hidden)) {
     df <- df[!df$hidden, ]
     if (share_y_axis) {
@@ -78,9 +76,11 @@ chronofix_plot_individual <- function(samples, id, min_window = 7,
         sprintf("Dates with posterior probability < %s not shown.", min_prob)
     } else {
       caption <- 
-        sprintf("Dates with posterior probability < %s times max not shown.",
-                min_prob)
+        sprintf("Dates with probability below %s%% of the panel maximum not shown.",
+                100 * min_prob)
     }
+  } else {
+    caption <- NULL
   }
   
   
