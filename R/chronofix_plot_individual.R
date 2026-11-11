@@ -136,7 +136,7 @@ chronofix_plot_individual <- function(samples, id, min_window = 7,
                       limits = legend_keys, drop = FALSE) +
     scale_x_date(date_labels = date_format,
                  breaks = scales::breaks_pretty(4)) +
-    {if (share_y_axis) {
+    { if (share_y_axis) {
       scale_y_continuous(limits = c(0, 1),
                          breaks = seq(0, 1, by = 0.25),
                          expand = expansion(mult = c(0, 0.05)))
