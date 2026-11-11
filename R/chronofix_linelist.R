@@ -89,9 +89,6 @@ chronofix_linelist <- function(samples,
   
   for (j in seq_len(n_events)) {
     p_err <- prob_error[, j]
-    dates_to_change <- 
-      which(p_err >= error_thresholds[3] | is.na(p_err))
-    
     results_data[[paste0(event_names[j], "_p_error")]] <- round(p_err, 3)
   }
   
