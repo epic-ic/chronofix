@@ -69,6 +69,7 @@ chronofix_plot_individual <- function(samples, id, min_window = 7,
     df1
   }))
   
+  caption <- NULL
   
   if (any(df$hidden)) {
     df <- df[!df$hidden, ]
