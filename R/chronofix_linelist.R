@@ -161,6 +161,9 @@ chronofix_linelist <- function(samples,
     
     if (observed_dates_tab) {
       openxlsx::addWorksheet(wb, "Observed Dates")
+      for (nm in event_names) {
+        data[[nm]] <- format(data[[nm]], date_format)
+      }
       openxlsx::writeData(wb, "Observed Dates", data)
       
       group_col <- which(colnames(data) == group)
