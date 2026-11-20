@@ -10,6 +10,7 @@
 ##' @param filename Output file path. If NULL, defaults to "chronofix_linelist.xlsx".
 ##' @param show_p_error Logical. If FALSE (default), posterior probability
 ##'  columns are hidden in Excel.
+##' @param observed_dates_tab 
 ##'
 ##' @return Output line list dataframe with estimated dates in the chosen file
 ##'  format.
@@ -23,8 +24,8 @@ chronofix_linelist <- function(samples,
                                error_thresholds = c(0.05, 0.5, 0.95),
                                format = "xlsx",
                                filename = NULL,
-                               show_p_error = FALSE) {
-  
+                               show_p_error = FALSE,
+                               observed_dates_tab = FALSE) {
   if (!inherits(samples, "chronofix_mcmc_samples")) {
     cli::cli_abort("Expected 'samples' to be a 'chronofix_mcmc_samples' object")
   }
@@ -155,6 +156,25 @@ chronofix_linelist <- function(samples,
             cols = excel_col
           )
         }
+      }
+    }
+    
+    if (observed_dates_tab) {
+      openxlsx::addWorksheet(wb, "Observed Dates")
+      for (nm in event_names) {
+        data[[nm]] <- format(data[[nm]], date_format)
+      }
+      openxlsx::writeData(wb, "Observed Dates", data)
+      
+      group_col <- which(colnames(data) == group)
+      openxlsx::setColWidths(wb, "Observed Dates", cols = group_col, widths = 22)
+      
+      for (j in seq_len(n_events)) {
+        excel_col <- which(colnames(data) == event_names[j])
+        
+        # Dynamically set width for specific event column
+        event_width <- max(14, nchar(event_names[j]))
+        openxlsx::setColWidths(wb, "Observed Dates", cols = excel_col, widths = event_width)
       }
     }
     
