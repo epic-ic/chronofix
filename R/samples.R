@@ -11,7 +11,7 @@ print.chronofix_mcmc_samples <- function(x, ...) {
     n_chains <- d[[3]]
   }
   cli::cli_h1(
-    paste("<chronofix_mcmc_samples: {n_pars} parameter{?s} x ",
+    paste("<chronofix_mcmc_samples: {n_pars} parameter{?s} x",
           "{n_samples} sample{?s} x {n_chains} chain{?s}>"))
   cli::cli_alert_info("Parameters: {squote(rownames(x$pars))}")
   
