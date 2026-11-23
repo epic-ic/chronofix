@@ -11,7 +11,7 @@
 ##' @param show_p_error Logical. If FALSE (default), posterior probability
 ##'  columns are hidden in Excel.
 ##' @param observed_dates_tab Logical, indicates whether to include an
-##'   "Observed Dates" tab when `format = "xlsx"`. Default is FALSE
+##'   "Observed Dates" tab when `format = "xlsx"`. Default is FALSE.
 ##'
 ##' @return Output line list dataframe with estimated dates in the chosen file
 ##'  format.
