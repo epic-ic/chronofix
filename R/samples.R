@@ -45,7 +45,7 @@ as_draws_array.chronofix_mcmc_samples <- function(x, ...) {
 
 
 ##' @exportS3Method posterior::as_draws_df
-as_draws_df.monty_samples <- function(x, ...) {
+as_draws_df.chronofix_mcmc_samples <- function(x, ...) {
   posterior::as_draws_df(as_draws_array.chronofix_mcmc_samples(x))
 }
 
