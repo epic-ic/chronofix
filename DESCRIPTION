@@ -1,6 +1,6 @@
 Package: chronofix
 Title: Probabilistic Line List Date Correction and Delay Estimation
-Version: 0.0.17
+Version: 0.0.18
 Authors@R: 
     c(person("Ed", "Knock", , "e.knock@imperial.ac.uk", role = c("aut", "cre")),
       person("Rebecca", "Nash", , "r.nash@imperial.ac.uk", role = c("aut")))
