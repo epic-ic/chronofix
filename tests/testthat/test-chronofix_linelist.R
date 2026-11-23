@@ -178,6 +178,21 @@ test_that("chronofix_linelist creates expected worksheets in xlsx output", {
 })
 
 
+test_that("chronofix_linelist warns when observed_dates_tab = TRUE for csv", {
+  mock_samples <- make_mock_samples()
+  path <- tempfile(fileext = ".csv")
+  
+  expect_warning(suppressMessages({
+    chronofix_linelist(
+      samples = mock_samples, 
+      format = "csv", 
+      filename = path,
+      observed_dates_tab = TRUE
+    )}), '`observed_dates_tab` is ignored when `format = "csv"`')
+  
+})
+
+
 test_that("chronofix_linelist flags filename and fileext mismatch", {
   mock_samples <- make_mock_samples()
   path <- tempfile(fileext = ".xlsx")

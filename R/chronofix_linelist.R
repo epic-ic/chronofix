@@ -62,13 +62,14 @@ chronofix_linelist <- function(samples,
       file_extension, format_lower
     ))
   }
-# warn if selected file format is csv then observed dates tab ignored
+  # warn if selected file format is csv then observed dates tab ignored
   if (observed_dates_tab && format_lower == "csv") {
     cli::cli_warn(c(
       "{.arg observed_dates_tab} is ignored when {.code format = \"csv\"}.",
       "i" = "Use {.code format = \"xlsx\"} to include an {.val Observed Dates} tab."
     ))
   }
+  
   event_names <- setdiff(colnames(data), c(id, group))
   
   est_dates_int <- 
