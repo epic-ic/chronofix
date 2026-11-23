@@ -2,7 +2,7 @@
 
 S3method(coda::as.mcmc.list,chronofix_mcmc_samples)
 S3method(posterior::as_draws_array,chronofix_mcmc_samples)
-S3method(posterior::as_draws_df,monty_samples)
+S3method(posterior::as_draws_df,chronofix_mcmc_samples)
 S3method(print,chronofix_mcmc_samples)
 export(chronofix_hyperparameters)
 export(chronofix_linelist)
