@@ -160,6 +160,21 @@ test_that("chronofix_linelist creates expected worksheets in xlsx output", {
   sheet_names <- openxlsx::getSheetNames(path)
   
   expect_equal(sheet_names, c("Reconstructed Dates", "Legend"))
+  
+  
+  suppressMessages({
+    chronofix_linelist(
+      samples = mock_samples, 
+      format = "xlsx", 
+      filename = path,
+      observed_dates_tab = TRUE
+    )
+  })
+  
+  sheet_names <- openxlsx::getSheetNames(path)
+  
+  expect_equal(sheet_names, 
+               c("Reconstructed Dates", "Observed Dates", "Legend"))
 })
 
 
