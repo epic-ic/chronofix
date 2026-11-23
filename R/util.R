@@ -63,3 +63,63 @@ clean_event_name <- function(raw_event) {
 vnapply <- function(...) {
   vapply(..., FUN.VALUE = 1)
 }
+
+suggested_package_status <- function(pkg) {
+  status <- ifelse(pkg %in% loadedNamespaces(), "loaded", "missing")
+  i <- status == "missing"
+  if (any(i)) {
+    status[i] <- ifelse(pkg[i] %in% .packages(TRUE), "installed", "missing")
+  }
+  set_names(status, pkg)
+}
+
+set_names <- function(x, nms) {
+  if (length(nms) == 1 && length(x) != 1) {
+    nms <- rep_len(nms, length(x))
+  }-
+  names(x) <- nms
+  x
+}
+
+
+array_reshape <- function(x, i, d, call = NULL) {
+  dx <- dim2(x)
+  if (length(dx) < i) {
+    cli::cli_abort(
+      "array only has {length(dx)} dimension{?s}, can't update dimension {i}",
+      call = call)
+  }
+  if (dx[[i]] != prod(d)) {
+    dim_str <- paste(d, collapse = ", ")
+    cli::cli_abort(
+      paste("New dimensions ({dim_str}) imply dimension {i} has length",
+            "{prod(d)} but found {dx[[i]]}"),
+      call = call)
+  }
+  
+  dn <- dimnames2(x)
+  
+  ## The actual reshape is easy:
+  dim(x) <- append(dx[-i], d, i - 1L)
+  
+  ## Can't preserve dimension names on modified dimensions
+  if (!is.null(dn)) {
+    dimnames(x) <- append(dn[-i], rep(list(NULL), length(d)), i - 1L)
+  }
+  x
+}
+
+
+dim2 <- function(x) {
+  dim(x) %||% length(x)
+}
+
+
+dimnames2 <- function(x) {
+  if (!is.null(dim(x))) {
+    dimnames(x)
+  } else {
+    nms <- names(x)
+    if (is.null(nms)) NULL else list(nms)
+  }
+}

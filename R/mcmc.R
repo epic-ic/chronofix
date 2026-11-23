@@ -57,7 +57,17 @@ chronofix_mcmc <- function(data,
   samples$data <- data
   samples$delay_map <- delay_map
   
-  class(samples) <- c(class(samples), "chronofix_mcmc_samples")
+  samples$details <- NULL
+  samples$observations <- NULL
+  samples$state <- NULL
+  
+  samples$full_chains$details <- NULL
+  samples$full_chains$observations <- NULL
+  samples$full_chains$state <- NULL
+  
+  class(samples$full_chains) <- "chronofix_mcmc_samples"
+  
+  class(samples) <- "chronofix_mcmc_samples"
   
   samples
   
