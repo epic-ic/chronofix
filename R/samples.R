@@ -68,4 +68,3 @@ unflatten_pars <- function(pars, chain) {
   array_reshape(pars, 2, c(n_samples, n_chains))
 }
 
-
