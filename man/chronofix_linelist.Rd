@@ -9,7 +9,8 @@ chronofix_linelist(
   error_thresholds = c(0.05, 0.5, 0.95),
   format = "xlsx",
   filename = NULL,
-  show_p_error = FALSE
+  show_p_error = FALSE,
+  observed_dates_tab = FALSE
 )
 }
 \arguments{
@@ -27,6 +28,9 @@ probability thresholds to classify a date as a possible error
 
 \item{show_p_error}{Logical. If FALSE (default), posterior probability
 columns are hidden in Excel.}
+
+\item{observed_dates_tab}{Logical, indicates whether to include an
+"Observed Dates" tab when \code{format = "xlsx"}. Default is FALSE}
 }
 \value{
 Output line list dataframe with estimated dates in the chosen file

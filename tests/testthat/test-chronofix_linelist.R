@@ -160,6 +160,36 @@ test_that("chronofix_linelist creates expected worksheets in xlsx output", {
   sheet_names <- openxlsx::getSheetNames(path)
   
   expect_equal(sheet_names, c("Reconstructed Dates", "Legend"))
+  
+  
+  suppressMessages({
+    chronofix_linelist(
+      samples = mock_samples, 
+      format = "xlsx", 
+      filename = path,
+      observed_dates_tab = TRUE
+    )
+  })
+  
+  sheet_names <- openxlsx::getSheetNames(path)
+  
+  expect_equal(sheet_names, 
+               c("Reconstructed Dates", "Observed Dates", "Legend"))
+})
+
+
+test_that("chronofix_linelist warns when observed_dates_tab = TRUE for csv", {
+  mock_samples <- make_mock_samples()
+  path <- tempfile(fileext = ".csv")
+  
+  expect_warning(suppressMessages({
+    chronofix_linelist(
+      samples = mock_samples, 
+      format = "csv", 
+      filename = path,
+      observed_dates_tab = TRUE
+    )}), '`observed_dates_tab` is ignored when `format = "csv"`')
+  
 })
 
 
