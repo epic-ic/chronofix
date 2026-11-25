@@ -81,18 +81,3 @@ set_names <- function(x, nms) {
   names(x) <- nms
   x
 }
-
-
-dim2 <- function(x) {
-  dim(x) %||% length(x)
-}
-
-
-dimnames2 <- function(x) {
-  if (!is.null(dim(x))) {
-    dimnames(x)
-  } else {
-    nms <- names(x)
-    if (is.null(nms)) NULL else list(nms)
-  }
-}
