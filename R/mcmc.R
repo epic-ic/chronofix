@@ -32,16 +32,17 @@ chronofix_mcmc <- function(data,
   
   parameters <- model$parameters
   
-  runner <- 
-    if (control$parallel) monty::monty_runner_callr(control$n_workers) else
-      monty::monty_runner_serial()
-  
   rng <- initial_rng(control$n_chains)
   steps <- mcmc_steps(control$n_steps, control$burnin, 
                       control$thinning_factor,
                       save_full_chains = TRUE)
   
-  res <- runner$run(pars, model, sampler, steps, rng)
+  if (control$parallel) {
+    runner <- monty::monty_runner_callr(control$n_workers)
+    res <- runner$run(pars, model, sampler, steps, rng)
+  } else {
+    res <- runner_serial(pars, model, sampler, steps, rng)
+  }
   
   samples <- combine_chains(res, data, delay_map)
   

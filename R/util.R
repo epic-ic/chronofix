@@ -81,3 +81,12 @@ set_names <- function(x, nms) {
   names(x) <- nms
   x
 }
+
+
+get_r_rng_state <- function() {
+  if (exists(".Random.seed", globalenv(), inherits = FALSE)) {
+    get(".Random.seed", globalenv(), inherits = FALSE)
+  } else {
+    NULL
+  }
+}
