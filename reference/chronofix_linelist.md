@@ -44,7 +44,7 @@ chronofix_linelist(
 - observed_dates_tab:
 
   Logical, indicates whether to include an "Observed Dates" tab when
-  `format = "xlsx"`. Default is FALSE
+  `format = "xlsx"`. Default is FALSE.
 
 ## Value
 
