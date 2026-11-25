@@ -94,6 +94,8 @@ test_that("Can run mcmc with data prepared with chronofix_prepare_data", {
   
   ## will be identical except for data
   samples$data <- NULL
+  samples$full_chains$data <- NULL
   samples2$data <- NULL
+  samples2$full_chains$data <- NULL
   expect_identical(samples, samples2)
 })
