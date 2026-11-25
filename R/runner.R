@@ -1,14 +1,54 @@
-runner_serial <- function(pars, model, sampler, steps, rng, progress = NULL) {
-  n_chains <- length(rng)
-  pb <- progress_bar(n_chains, steps$total, progress, show_overall = TRUE)
-  with_progress_fail_on_error(
-    pb,
-    lapply(
-      seq_along(rng),
-      function(i) {
-        run_chain(i, pars[, i], model, sampler, steps,
-                  pb$update, rng[[i]])
-      }))
+runner_serial <- function(progress = NULL) {
+  run <- function(pars, model, sampler, steps, rng) {
+    n_chains <- length(rng)
+    pb <- progress_bar(n_chains, steps$total, progress, show_overall = TRUE)
+    with_progress_fail_on_error(
+      pb,
+      lapply(
+        seq_along(rng),
+        function(i) {
+          run_chain(i, pars[, i], model, sampler, steps,
+                    pb$update, rng[[i]])
+        }))
+  }
+  
+  list(run = run)
+}
+
+
+runner_parallel <- function(n_workers) {
+  
+  run <- function(pars, model, sampler, steps, rng) {
+    n_chains <- length(rng)
+    cl <- parallel::makeCluster(min(n_chains, n_workers))
+    on.exit(parallel::stopCluster(cl))
+    pars_list <- asplit(pars, MARGIN = 2)
+    rng_state <- lapply(rng, function(r) monty::monty_rng_state(r))
+    
+    args <- list(model = model,
+                 sampler = sampler,
+                 steps = steps)
+    
+    ## To debug issues in the parallel sampler, it's most efficient to
+    ## replace this call with `Map` and drop the `cl` argument, then
+    ## you get nice stack traces.
+    parallel::clusterMap(
+      cl,
+      run_chain_parallel,
+      pars = pars_list,
+      rng = rng_state,
+      MoreArgs = args)
+  }
+  
+  list(run = run)
+}
+
+
+run_chain_parallel <- function(chain_id, pars, model, sampler, steps,
+                               rng) {
+  rng <- monty::monty_rng_create(seed = rng)
+  progress <- progress_bar_none()$update
+  run_chain(chain_id, pars, model, sampler, steps, progress, rng)
 }
 
 

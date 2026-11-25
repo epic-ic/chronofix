@@ -11,7 +11,7 @@ progress_bar <- function(n_chains, n_steps, progress, show_overall,
 
 show_progress_bar <- function(progress, call = NULL) {
   if (is.null(progress)) {
-    progress <- getOption("monty.progress", !is_testing())
+    progress <- getOption("chronofix.progress", !is_testing())
   }
   ## Errors here are not great if we get this from an option, probably
   ## needs its own error path.
@@ -41,7 +41,7 @@ progress_bar_simple <- function(n_steps, every_s = 1, min_updates = 20) {
     show_progress <- at == n_steps || at %% freq == 0 || now > env$t_next
     if (show_progress) {
       env$t_next <- now + every_s
-      message(sprintf("MONTY-PROGRESS: chain: %s, step: %s",
+      message(sprintf("CHRONOFIX-PROGRESS: chain: %s, step: %s",
                       chain_id, at))
     }
   }
@@ -53,7 +53,7 @@ progress_bar_fancy <- function(n_chains, n_steps, show_overall,
                                single_chain = FALSE) {
   ## We're expecting to take a while, so we show immediately, if enabled:
   oo <- options(cli.progress_show_after = 0,
-                cli.spinner = monty_spinner())
+                cli.spinner = chronofix_spinner())
   
   e <- new.env()
   e$n <- rep(0, n_chains)
@@ -158,7 +158,7 @@ with_progress_fail_on_error <- function(progress, code) {
 }
 
 
-monty_spinner <- function(date = Sys.Date()) {
+chronofix_spinner <- function(date = Sys.Date()) {
   getOption(
     "cli.spinner",
     if (format(date, "%m") == "12") "christmas" else "dots12")

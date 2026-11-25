@@ -37,12 +37,9 @@ chronofix_mcmc <- function(data,
                       control$thinning_factor,
                       save_full_chains = TRUE)
   
-  if (control$parallel) {
-    runner <- monty::monty_runner_callr(control$n_workers)
-    res <- runner$run(pars, model, sampler, steps, rng)
-  } else {
-    res <- runner_serial(pars, model, sampler, steps, rng)
-  }
+  runner <- if (control$parallel) runner_parallel(control$n_workers) else
+    runner_serial()
+  res <- runner$run(pars, model, sampler, steps, rng)
   
   samples <- combine_chains(res, data, delay_map)
   
