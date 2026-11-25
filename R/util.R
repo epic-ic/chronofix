@@ -81,37 +81,3 @@ set_names <- function(x, nms) {
   names(x) <- nms
   x
 }
-
-
-array_drop <- function(x, i) {
-  dx <- dim2(x)
-  rank <- length(dx)
-  
-  dn <- dimnames(x)
-  dim(x) <- dim(x)[-i]
-  
-  if (!is.null(dn)) {
-    if (rank == 2) {
-      x <- c(x)
-      names(x) <- dn[[-i]]
-    } else {
-      dimnames(x) <- dn[-i]
-    }
-  }
-  x
-}
-
-
-dim2 <- function(x) {
-  dim(x) %||% length(x)
-}
-
-
-dimnames2 <- function(x) {
-  if (!is.null(dim(x))) {
-    dimnames(x)
-  } else {
-    nms <- names(x)
-    if (is.null(nms)) NULL else list(nms)
-  }
-}
