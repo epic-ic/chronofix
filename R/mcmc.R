@@ -61,7 +61,7 @@ chronofix_mcmc <- function(data,
   samples$observations <- NULL
   samples$state <- NULL
   
-  samples$full_chain$data <- data
+  samples$full_chains$data <- data
   samples$full_chains$delay_map <- delay_map
   samples$full_chains$details <- NULL
   samples$full_chains$observations <- NULL
