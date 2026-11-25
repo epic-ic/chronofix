@@ -262,9 +262,9 @@ combine_chains <- function(res, data, delay_map) {
   
   history <- lapply(res, "[[", "history")
   pars <- abind::abind(lapply(history, "[[", "pars"), along = 3)
-  density <- abind::abind(arrays = lapply(history, "[[", "density"), along = 2)
+  density <- abind::abind(lapply(history, "[[", "density"), along = 2)
   
-  initial <- abind::abind(arrays = lapply(res, "[[", "initial"), along = 2)
+  initial <- abind::abind(lapply(res, "[[", "initial"), along = 2)
   augmented_data <- 
     abind::abind(lapply(history, "[[", "augmented_data"), along = 3)
   
@@ -282,14 +282,19 @@ combine_chains <- function(res, data, delay_map) {
 
 flatten_chains <- function(samples) {
   d <- dim(samples$pars)
+  par_nms <- rownames(samples$pars)
+  n_pars <- d[[1]]
   n_samples <- d[[2]]
   n_chains <- d[[3]]
   
   chain <- rep(seq_len(n_chains), each = n_samples)
   
-  samples$pars <- array_flatten(samples$pars, c(2, 3))
-  samples$density <- array_flatten(samples$density, c(1, 2))
-  samples$augmented_data <- array_flatten(samples$augmented_data, c(2, 3))
+  samples$pars <- array(samples$pars, c(n_pars, n_samples * n_chains),
+                        dimnames = list(par_nms, NULL))
+  samples$density <- c(samples$density)
+  samples$augmented_data <-
+    array(samples$augmented_data,
+          c(nrow(samples$augmented_data), n_samples * n_chains))
   
   attr(samples, "chain") <- chain
   
