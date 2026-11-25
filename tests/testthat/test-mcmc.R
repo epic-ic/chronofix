@@ -20,6 +20,28 @@ test_that("Can run mcmc", {
 })
 
 
+test_that("Can run mcmc in parallel", {
+  set.seed(1)
+  toy <- toy_data()
+  data <- toy$data$observed_data
+  delay_map <- toy$delay_map
+  
+  hyperparameters <- chronofix_hyperparameters()
+  initial <- chronofix_mcmc_initial()
+  
+  set.seed(1)
+  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 3)
+  samples <- chronofix_mcmc(data, delay_map, hyperparameters, initial, control)
+  
+  set.seed(1)
+  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 3,
+                                    parallel = TRUE, n_workers = 3)
+  samples2 <- chronofix_mcmc(data, delay_map, hyperparameters, initial, control)
+  
+  expect_identical(samples, samples2)
+})
+
+
 test_that("Can run mcmc with single group and single delay", {
   set.seed(1)
   toy <- toy_data(single_group = "community-alive")
