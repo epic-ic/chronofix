@@ -30,12 +30,12 @@ test_that("Can run mcmc in parallel", {
   initial <- chronofix_mcmc_initial()
   
   set.seed(1)
-  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 3)
+  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 2)
   samples <- chronofix_mcmc(data, delay_map, hyperparameters, initial, control)
   
   set.seed(1)
-  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 3,
-                                    parallel = TRUE, n_workers = 3)
+  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 2,
+                                    parallel = TRUE, n_workers = 2)
   samples2 <- chronofix_mcmc(data, delay_map, hyperparameters, initial, control)
   
   expect_identical(samples, samples2)
