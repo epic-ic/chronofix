@@ -1,31 +1,3 @@
-array_reshape <- function(x, i, d, call = NULL) {
-  dx <- dim2(x)
-  if (length(dx) < i) {
-    cli::cli_abort(
-      "array only has {length(dx)} dimension{?s}, can't update dimension {i}",
-      call = call)
-  }
-  if (dx[[i]] != prod(d)) {
-    dim_str <- paste(d, collapse = ", ")
-    cli::cli_abort(
-      paste("New dimensions ({dim_str}) imply dimension {i} has length",
-            "{prod(d)} but found {dx[[i]]}"),
-      call = call)
-  }
-  
-  dn <- dimnames2(x)
-  
-  ## The actual reshape is easy:
-  dim(x) <- append(dx[-i], d, i - 1L)
-  
-  ## Can't preserve dimension names on modified dimensions
-  if (!is.null(dn)) {
-    dimnames(x) <- append(dn[-i], rep(list(NULL), length(d)), i - 1L)
-  }
-  x
-}
-
-
 array_drop <- function(x, i, call = NULL) {
   dx <- dim2(x)
   rank <- length(dx)
