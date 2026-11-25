@@ -41,7 +41,7 @@ test_that("can convert to posterior draws types", {
   samples_arr <- posterior::as_draws_array(samples)
   expect_s3_class(samples_arr, "draws_array")
   expect_equal(dimnames(samples_arr),
-               list(chain = NULL, iteration = NULL, 
+               list(iteration = NULL, chain = NULL,
                     variable = rownames(samples$pars)))
 })
 
