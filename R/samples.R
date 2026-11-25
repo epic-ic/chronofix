@@ -51,12 +51,13 @@ as_draws_df.chronofix_mcmc_samples <- function(x, ...) {
 
 
 ##' @exportS3Method coda::as.mcmc.list
+##' @importFrom abind adrop
 as.mcmc.list.chronofix_mcmc_samples <- function(x, ...) {
   chain <- attr(x, "chain")
   pars <- if (is.null(chain)) x$pars else unflatten_pars(x$pars, chain)
   n_chains <- dim(pars)[[3]]
   coda::mcmc.list(lapply(seq_len(n_chains), function(i) {
-    coda::mcmc(t(array_drop(pars[, , i, drop = FALSE], 3)))
+    coda::mcmc(t(abind::adrop(pars[, , i, drop = FALSE], drop = 3)))
   }))
 }
 
