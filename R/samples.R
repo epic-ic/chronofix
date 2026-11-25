@@ -38,7 +38,7 @@ as_draws_array.chronofix_mcmc_samples <- function(x, ...) {
   chain <- attr(x, "chain")
   pars <- if (is.null(chain)) x$pars else unflatten_pars(x$pars, chain)
   arr <- aperm(pars, c(2, 3, 1))
-  names(dimnames(arr)) <- c("chain", "iteration", "variable")
+  names(dimnames(arr)) <- c("iteration", "chain", "variable")
   class(arr) <- c("draws_array", "draws", "array")
   arr
 }
