@@ -30,7 +30,7 @@ probability thresholds to classify a date as a possible error
 columns are hidden in Excel.}
 
 \item{observed_dates_tab}{Logical, indicates whether to include an
-"Observed Dates" tab when \code{format = "xlsx"}. Default is FALSE}
+"Observed Dates" tab when \code{format = "xlsx"}. Default is FALSE.}
 }
 \value{
 Output line list dataframe with estimated dates in the chosen file

@@ -254,24 +254,23 @@ rng_distributed_state <- function(seed = NULL, n_nodes = 1L) {
 }
 
 
+##' @importFrom abind abind
 combine_chains <- function(res, data, delay_map) {
   if (inherits(res, "chronofix_mcmc_samples")) {
     return(res)
   }
   
   history <- lapply(res, "[[", "history")
-  pars <- array_bind(arrays = lapply(history, "[[", "pars"), after = 2)
-  density <- array_bind(arrays = lapply(history, "[[", "density"), after = 1)
+  pars <- abind::abind(lapply(history, "[[", "pars"), along = 3)
+  density <- abind::abind(arrays = lapply(history, "[[", "density"), along = 2)
   
-  initial <- array_bind(arrays = lapply(res, "[[", "initial"), after = 1)
+  initial <- abind::abind(arrays = lapply(res, "[[", "initial"), along = 2)
   augmented_data <- 
-    array_bind(arrays = lapply(history, "[[", "augmented_data"), after = 2)
+    abind::abind(lapply(history, "[[", "augmented_data"), along = 3)
   
   full_chains <- lapply(history, "[[", "full_chains")
-  pars_full <- 
-    array_bind(arrays = lapply(full_chains, "[[", "pars"), after = 2)
-  density_full <- 
-    array_bind(arrays = lapply(full_chains, "[[", "density"), after = 1)
+  pars_full <- abind::abind(lapply(full_chains, "[[", "pars"), along = 3)
+  density_full <- abind::abind(lapply(full_chains, "[[", "density"), along = 2)
   full_chains <- chronofix_samples(pars_full, density_full, initial, data,
                                    delay_map)
   
