@@ -62,8 +62,11 @@ as.mcmc.list.chronofix_mcmc_samples <- function(x, ...) {
 
 
 unflatten_pars <- function(pars, chain) {
+  n_pars <- nrow(pars)
+  par_nms <- rownames(pars)
   n_chains <- max(chain)
-  n_samples <- length(chain) / n_chains
+  n_samples_per_chain <- length(chain) / n_chains
   
-  array_reshape(pars, 2, c(n_samples, n_chains))
+  array(pars, c(n_pars, n_samples_per_chain, n_chains),
+        dimnames = list(par_nms, NULL, NULL))
 }
