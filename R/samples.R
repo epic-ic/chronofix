@@ -1,0 +1,73 @@
+##' @export
+print.chronofix_mcmc_samples <- function(x, ...) {
+  d <- dim(x$pars)
+  n_pars <- d[[1]]
+  chain <- attr(x, "chain")
+  if (!is.null(chain)) {
+    n_chains <- max(chain)
+    n_samples <- length(chain) / n_chains
+  } else {
+    n_samples <- d[[2]]
+    n_chains <- d[[3]]
+  }
+  cli::cli_h1(
+    paste("<chronofix_mcmc_samples: {n_pars} parameter{?s} x",
+          "{n_samples} sample{?s} x {n_chains} chain{?s}>"))
+  cli::cli_alert_info("Parameters: {squote(rownames(x$pars))}")
+  
+  target <- rbind(c("posterior", "as_draws_array"),
+                  c("posterior", "as_draws_df"),
+                  c("coda", "as.mcmc.list"))
+  status <- suggested_package_status(target[, 1])
+  status_cls <- c(missing = "danger", installed = "warning", loaded = "success")
+  status_str <- status
+  status_str[status == "installed"] <- "installed, but not loaded"
+  target_str <- sprintf(
+    "{.alert-%s %s::%s() {cli::col_grey('[package %s]')}}",
+    status_cls[status], target[, 1], target[, 2], status_str)
+  cli::cli_alert_info(
+    "Conversion to other types is possible:")
+  cli::cli_bullets(set_names(target_str, ">"))
+  
+  invisible(x)
+}
+
+
+##' @exportS3Method posterior::as_draws_array
+as_draws_array.chronofix_mcmc_samples <- function(x, ...) {
+  chain <- attr(x, "chain")
+  pars <- if (is.null(chain)) x$pars else unflatten_pars(x$pars, chain)
+  arr <- aperm(pars, c(2, 3, 1))
+  names(dimnames(arr)) <- c("iteration", "chain", "variable")
+  class(arr) <- c("draws_array", "draws", "array")
+  arr
+}
+
+
+##' @exportS3Method posterior::as_draws_df
+as_draws_df.chronofix_mcmc_samples <- function(x, ...) {
+  posterior::as_draws_df(as_draws_array.chronofix_mcmc_samples(x))
+}
+
+
+##' @exportS3Method coda::as.mcmc.list
+##' @importFrom abind adrop
+as.mcmc.list.chronofix_mcmc_samples <- function(x, ...) {
+  chain <- attr(x, "chain")
+  pars <- if (is.null(chain)) x$pars else unflatten_pars(x$pars, chain)
+  n_chains <- dim(pars)[[3]]
+  coda::mcmc.list(lapply(seq_len(n_chains), function(i) {
+    coda::mcmc(t(abind::adrop(pars[, , i, drop = FALSE], drop = 3)))
+  }))
+}
+
+
+unflatten_pars <- function(pars, chain) {
+  n_pars <- nrow(pars)
+  par_nms <- rownames(pars)
+  n_chains <- max(chain)
+  n_samples_per_chain <- length(chain) / n_chains
+  
+  array(pars, c(n_pars, n_samples_per_chain, n_chains),
+        dimnames = list(par_nms, NULL, NULL))
+}

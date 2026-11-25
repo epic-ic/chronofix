@@ -63,3 +63,21 @@ clean_event_name <- function(raw_event) {
 vnapply <- function(...) {
   vapply(..., FUN.VALUE = 1)
 }
+
+suggested_package_status <- function(pkg) {
+  status <- ifelse(pkg %in% loadedNamespaces(), "loaded", "missing")
+  i <- status == "missing"
+  if (any(i)) {
+    status[i] <- ifelse(pkg[i] %in% .packages(TRUE), "installed", "missing")
+  }
+  set_names(status, pkg)
+}
+
+
+set_names <- function(x, nms) {
+  if (length(nms) == 1 && length(x) != 1) {
+    nms <- rep_len(nms, length(x))
+  }
+  names(x) <- nms
+  x
+}
