@@ -96,7 +96,7 @@ progress_bar_fancy <- function(n_chains, n_steps, show_overall,
 
 
 parse_progress_bar_simple <- function(txt) {
-  re <- "^MONTY-PROGRESS: chain: ([0-9]+), step: ([0-9]+)$"
+  re <- "^CHRONOFIX-PROGRESS: chain: ([0-9]+), step: ([0-9]+)$"
   i <- grep(re, txt)
   if (length(i) == 0) {
     NULL
