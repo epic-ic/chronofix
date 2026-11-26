@@ -1,5 +1,5 @@
 runner_serial <- function(progress = NULL) {
-  run <- function(pars, model, sampler, steps, rng) {
+  run <- function(pars, model, control, steps, rng) {
     n_chains <- length(rng)
     pb <- progress_bar(n_chains, steps$total, progress, show_overall = TRUE)
     with_progress_fail_on_error(
@@ -7,7 +7,7 @@ runner_serial <- function(progress = NULL) {
       lapply(
         seq_along(rng),
         function(i) {
-          run_chain(i, pars[, i], model, sampler, steps,
+          run_chain(i, pars[, i], model, control, steps,
                     pb$update, rng[[i]])
         }))
   }
@@ -18,7 +18,7 @@ runner_serial <- function(progress = NULL) {
 
 runner_parallel <- function(n_workers) {
   
-  run <- function(pars, model, sampler, steps, rng) {
+  run <- function(pars, model, control, steps, rng) {
     n_chains <- length(rng)
     cl <- parallel::makeCluster(min(n_chains, n_workers))
     on.exit(parallel::stopCluster(cl))
@@ -26,7 +26,7 @@ runner_parallel <- function(n_workers) {
     rng_state <- lapply(rng, function(r) monty::monty_rng_state(r))
     
     args <- list(model = model,
-                 sampler = sampler,
+                 control = control,
                  steps = steps)
     
     ## To debug issues in the parallel sampler, it's most efficient to
@@ -44,30 +44,27 @@ runner_parallel <- function(n_workers) {
 }
 
 
-run_chain_parallel <- function(chain_id, pars, model, sampler, steps,
+run_chain_parallel <- function(chain_id, pars, model, control, steps,
                                rng) {
   rng <- monty::monty_rng_create(seed = rng)
   progress <- progress_bar_none()$update
-  run_chain(chain_id, pars, model, sampler, steps, progress, rng)
+  run_chain(chain_id, pars, model, control, steps, progress, rng)
 }
 
 
-run_chain <- function(chain_id, pars, model, sampler, steps,
+run_chain <- function(chain_id, pars, model, control, steps,
                       progress, rng) {
   r_rng_state <- get_r_rng_state()
-  model$restore()
   
   chain_state <- initialise_state(pars, model, rng)
-  sampler_state <-
-    sampler$initialise(chain_state, sampler$control, model, rng)
   
-  run_chain2(chain_id, chain_state, sampler_state, model, sampler,
+  run_chain2(chain_id, chain_state, model, control,
              steps, progress, rng, r_rng_state)
 }
 
 
-run_chain2 <- function(chain_id, chain_state, sampler_state, model,
-                       sampler, steps, progress, rng, r_rng_state) {
+run_chain2 <- function(chain_id, chain_state, model,
+                       control, steps, progress, rng, r_rng_state) {
   initial <- chain_state$pars
   n_pars <- length(model$parameters)
   
@@ -75,7 +72,6 @@ run_chain2 <- function(chain_id, chain_state, sampler_state, model,
   thinning_factor <- steps$thinning_factor
   n_steps <- steps$total
   n_steps_record <- ceiling((steps$total - burnin) / thinning_factor)
-  save_full_chains <- steps$save_full_chains
   
   history_pars <- matrix(NA_real_, n_pars, n_steps_record)
   history_density <- rep(NA_real_, n_steps_record)
@@ -92,8 +88,7 @@ run_chain2 <- function(chain_id, chain_state, sampler_state, model,
     chain_state$augmented_data <- res$augmented_data
     chain_state$density <- res$density
     attr(chain_state$pars, "augmented_data") <- res$augmented_data
-    chain_state <- sampler$step(chain_state, sampler_state, sampler$control,
-                                model, rng)
+    chain_state <- update_pars(chain_state, control, model, rng)
     if (i > burnin && i %% thinning_factor == 0) {
       history_pars[, j] <- chain_state$pars
       history_density[[j]] <- chain_state$density
@@ -107,9 +102,7 @@ run_chain2 <- function(chain_id, chain_state, sampler_state, model,
   
   ## Pop the parameter names on last
   rownames(history_pars) <- model$parameters
-  if (save_full_chains) {
-    rownames(history_full_chains$pars) <- model$parameters    
-  }
+  rownames(history_full_chains$pars) <- model$parameters
   
   ## This list will hold things that we'll use internally but not
   ## surface to the user in the final object (or summarise them in

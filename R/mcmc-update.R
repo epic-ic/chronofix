@@ -1,3 +1,16 @@
+update_pars <- function(state_chain, control, model, rng) {
+  
+  state_chain <- update_pars_delay(state_chain, control, model, rng)
+  
+  state_chain <- update_prob_error(state_chain, model, rng)
+  
+  state_chain$density <- model$likelihood(state_chain$pars) +
+    model$prior(state_chain$pars)
+  
+  state_chain 
+}
+
+
 update_pars_delay <- function(state_chain, control, model, rng) {
   
   augmented_data <- 
@@ -215,7 +228,8 @@ update_prob_error <- function(state_chain, model, rng) {
   state_chain$pars[i] <- 
     monty::monty_random_beta(beta_pars$shape1, beta_pars$shape2, rng)
   
-  state_chain$density <- model$density(state_chain$pars)
+  state_chain$density <- model$likelihood(state_chain$pars) +
+    model$prior(state_chain$pars)
   
   state_chain
 }

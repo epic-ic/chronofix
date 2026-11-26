@@ -24,7 +24,6 @@ chronofix_mcmc <- function(data,
   data <- chronofix_prepare_data(data)
   
   model <- chronofix_model(data, delay_map, hyperparameters, control)
-  sampler <- chronofix_sampler(control)
   
   pars_initial <- mcmc_pars_initialise(model, initial)
   pars <- matrix(pars_initial, length(model$parameters), 
@@ -39,7 +38,7 @@ chronofix_mcmc <- function(data,
   
   runner <- if (control$parallel) runner_parallel(control$n_workers) else
     runner_serial()
-  res <- runner$run(pars, model, sampler, steps, rng)
+  res <- runner$run(pars, model, control, steps, rng)
   
   samples <- combine_chains(res, data, delay_map)
   

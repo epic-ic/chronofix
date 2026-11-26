@@ -28,28 +28,25 @@ chronofix_model <- function(data, delay_map, hyperparameters, control) {
   
   data_packer <- make_augmented_data_packer(observed_dates)
   
-  density <- make_chronofix_density(parameters, groups, model_info, date_range,
-                                    hyperparameters, data_packer)
+  likelihood <- make_chronofix_likelihood(parameters, groups, model_info,
+                                          date_range, hyperparameters,
+                                          data_packer)
   
   augmented_data_update <- 
     make_augmented_data_update(observed_dates, parameters, groups, model_info,
-                               date_range, control, density, data_packer)
+                               date_range, control, likelihood, prior,
+                               data_packer)
   
-  likelihood <- monty::monty_model(
-    list(parameters = parameters,
-         domain = domain,
-         density = density,
-         augmented_data_update = augmented_data_update))
+  prior <- make_prior(parameters, hyperparameters, delay_map$distribution)
   
-  prior <- make_prior(parameters, hyperparameters, domain, 
-                      delay_map$distribution)
-  
-  model <- likelihood + prior
-  
-  model$hyperparameters <- hyperparameters
-  model$data_packer <- data_packer
-  model$info <- model_info
-  model$groups_data <- groups
+  model <- list(parameters = parameters,
+                likelihood = likelihood,
+                prior = prior,
+                augmented_data_update = augmented_data_update,
+                hyperparameters = hyperparameters,
+                data_packer = data_packer,
+                info = model_info,
+                groups_data = groups)
   
   model
   
@@ -329,8 +326,9 @@ make_model_info <- function(delay_map, dates) {
 }
 
 
-make_chronofix_density <- function(parameters, groups, model_info, date_range,
-                                   hyperparameters, data_packer) {
+make_chronofix_likelihood <- function(parameters, groups, model_info,
+                                      date_range, hyperparameters,
+                                      data_packer) {
   
   density <- function(pars) {
     names(pars) <- parameters
@@ -344,50 +342,46 @@ make_chronofix_density <- function(parameters, groups, model_info, date_range,
 
 
 #' @importFrom stats dbeta dexp dgamma dnorm
-make_prior <- function(parameters, hyperparameters, domain,
-                       delay_distributions) {
-  monty::monty_model(
-    list(
-      parameters = parameters,
-      density = function (pars) {
-        names(pars) <- parameters
-        
-        lp_prob_error <- 
-          dbeta(pars[["prob_error"]], hyperparameters$prob_error_shape1, 
-                hyperparameters$prob_error_shape2, log = TRUE)
-        
-        n_delays <- length(delay_distributions)
-        lp_delays <- rep(0, n_delays)
-        
-        for (i in seq_len(n_delays)) {
-          if (delay_distributions[i] == "gamma") {
-            lp_delays[i] <-
-              dgamma(pars[[paste0("delay", i, "_shape")]],
-                     hyperparameters$gamma_shape_prior_shape,
-                     rate = hyperparameters$gamma_shape_prior_rate, 
-                     log = TRUE) +
-              dinvgamma(pars[[paste0("delay", i, "_mean")]],
-                        hyperparameters$gamma_mean_prior_shape,
-                        hyperparameters$gamma_mean_prior_scale,
-                        log = TRUE)
-          } else if (delay_distributions[i] == "log-normal") {
-            lp_delays[i] <-
-              dnorm(pars[[paste0("delay", i, "_meanlog")]],
-                     hyperparameters$log_normal_meanlog_prior_mean,
-                     1 / sqrt(hyperparameters$log_normal_meanlog_prior_precision),
-                    log = TRUE) +
-              dgamma(pars[[paste0("delay", i, "_precisionlog")]],
-                     hyperparameters$log_normal_precisionlog_prior_shape,
-                     rate = hyperparameters$log_normal_precisionlog_prior_rate, 
-                     log = TRUE)
-          }
-        }
-        
-        lp_prob_error + sum(lp_delays)
-        
-      },
-      domain = domain
-    ))
+make_prior <- function(parameters, hyperparameters, delay_distributions) {
+  prior <- function (pars) {
+    names(pars) <- parameters
+    
+    lp_prob_error <- 
+      dbeta(pars[["prob_error"]], hyperparameters$prob_error_shape1, 
+            hyperparameters$prob_error_shape2, log = TRUE)
+    
+    n_delays <- length(delay_distributions)
+    lp_delays <- rep(0, n_delays)
+    
+    for (i in seq_len(n_delays)) {
+      if (delay_distributions[i] == "gamma") {
+        lp_delays[i] <-
+          dgamma(pars[[paste0("delay", i, "_shape")]],
+                 hyperparameters$gamma_shape_prior_shape,
+                 rate = hyperparameters$gamma_shape_prior_rate, 
+                 log = TRUE) +
+          dinvgamma(pars[[paste0("delay", i, "_mean")]],
+                    hyperparameters$gamma_mean_prior_shape,
+                    hyperparameters$gamma_mean_prior_scale,
+                    log = TRUE)
+      } else if (delay_distributions[i] == "log-normal") {
+        lp_delays[i] <-
+          dnorm(pars[[paste0("delay", i, "_meanlog")]],
+                hyperparameters$log_normal_meanlog_prior_mean,
+                1 / sqrt(hyperparameters$log_normal_meanlog_prior_precision),
+                log = TRUE) +
+          dgamma(pars[[paste0("delay", i, "_precisionlog")]],
+                 hyperparameters$log_normal_precisionlog_prior_shape,
+                 rate = hyperparameters$log_normal_precisionlog_prior_rate, 
+                 log = TRUE)
+      }
+    }
+    
+    lp_prob_error + sum(lp_delays)
+    
+  }
+  
+  prior
 }
 
 
@@ -517,7 +511,7 @@ convert_to_distribution_params <- function(mean, cv, distribution) {
 
 make_augmented_data_update <- function(observed_dates, parameters, groups,
                                        model_info, date_range, control,
-                                       density_fn, data_packer) {
+                                       likelihood, prior, data_packer) {
   augmented_data_update <- function(pars, rng) {
     augmented_data <- attr(pars, "augmented_data")
     
@@ -531,7 +525,7 @@ make_augmented_data_update <- function(observed_dates, parameters, groups,
       augmented_data <- data_packer$pack(augmented_data)
       
       attr(pars, "augmented_data") <- augmented_data
-      density <- density_fn(pars)
+      density <- likelihood(pars) + prior(pars)
     } else {
       augmented_data <- unpack_augmented_data(augmented_data, data_packer)
       augmented_data <- update_augmented_data(augmented_data, observed_dates,
@@ -539,7 +533,7 @@ make_augmented_data_update <- function(observed_dates, parameters, groups,
                                               date_range, control, rng)
       augmented_data <- data_packer$pack(augmented_data)
       attr(pars, "augmented_data") <- augmented_data
-      density <- density_fn(pars)
+      density <- likelihood(pars) + prior(pars)
     }
     
     list(augmented_data = augmented_data, density = density)
