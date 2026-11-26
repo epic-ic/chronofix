@@ -33,8 +33,7 @@ chronofix_mcmc <- function(data,
   
   rng <- initial_rng(control$n_chains)
   steps <- mcmc_steps(control$n_steps, control$burnin, 
-                      control$thinning_factor,
-                      save_full_chains = TRUE)
+                      control$thinning_factor)
   
   runner <- if (control$parallel) runner_parallel(control$n_workers) else
     runner_serial()
@@ -197,11 +196,7 @@ mcmc_pars_initialise <- function(model, initial) {
 
 
 mcmc_steps <- function(n_steps, burnin = NULL, thinning_factor = NULL,
-                       save_full_chains = FALSE,
                        call = parent.frame()) {
-  if (inherits(n_steps, "monty_sample_steps")) {
-    return(n_steps)
-  }
   assert_scalar_size(n_steps, call = call)
   if (is.null(burnin)) {
     burnin <- 0
@@ -222,13 +217,10 @@ mcmc_steps <- function(n_steps, burnin = NULL, thinning_factor = NULL,
         call = call)
     }
   }
-  assert_logical(save_full_chains)
-  ret <- list(total = n_steps,
-              burnin = burnin,
-              thinning_factor = thinning_factor,
-              save_full_chains = save_full_chains)
-  class(ret) <- "monty_sample_steps"
-  ret
+  
+  list(total = n_steps,
+       burnin = burnin,
+       thinning_factor = thinning_factor)
 }
 
 
