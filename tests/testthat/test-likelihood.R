@@ -167,11 +167,9 @@ test_that("log-likelihood aggregates correctly", {
   estimated_dates <- as.matrix(toy$data$true_data[, -c(1, 2)])
   error_indicators <- as.matrix(toy$data$error_indicators[, -c(1, 2)])
   
-  augmented_data <- 
-    model$data_packer$pack(list(estimated_dates = estimated_dates,
-                                error_indicators = error_indicators))
-  attr(pars, "augmented_data") <- augmented_data
-  ll_aggregated <- model$likelihood(pars)
+  augmented_data <- list(estimated_dates = estimated_dates,
+                         error_indicators = error_indicators)
+  ll_aggregated <- model$likelihood(pars, augmented_data)
   
   
   ## now calculate all ll parts
