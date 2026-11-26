@@ -44,8 +44,6 @@ chronofix_mcmc <- function(data,
   samples <- flatten_chains(samples)
   
   ## Unpack augmented data
-  samples$augmented_data <- 
-    unpack_augmented_data(samples$augmented_data, model$data_packer)
   id <- attr(data, "id")
   group <- attr(data, "group")
   rownames(samples$augmented_data$estimated_dates) <- data[[id]]
@@ -254,8 +252,14 @@ combine_chains <- function(res, data, delay_map) {
   density <- abind::abind(lapply(history, "[[", "density"), along = 2)
   
   initial <- abind::abind(lapply(res, "[[", "initial"), along = 2)
-  augmented_data <- 
-    abind::abind(lapply(history, "[[", "augmented_data"), along = 3)
+  
+  augmented_data <- lapply(history, "[[", "augmented_data")
+  estimated_dates <- 
+    abind::abind(lapply(augmented_data, "[[", "estimated_dates"), along = 4)
+  error_indicators <- 
+    abind::abind(lapply(augmented_data, "[[", "error_indicators"), along = 4)
+  augmented_data <- list(estimated_dates = estimated_dates,
+                         error_indicators = error_indicators)
   
   full_chains <- lapply(history, "[[", "full_chains")
   pars_full <- abind::abind(lapply(full_chains, "[[", "pars"), along = 3)
@@ -281,9 +285,14 @@ flatten_chains <- function(samples) {
   samples$pars <- array(samples$pars, c(n_pars, n_samples * n_chains),
                         dimnames = list(par_nms, NULL))
   samples$density <- c(samples$density)
-  samples$augmented_data <-
-    array(samples$augmented_data,
-          c(nrow(samples$augmented_data), n_samples * n_chains))
+  samples$augmented_data$estimated_dates <-
+    array(samples$augmented_data$estimated_dates,
+          c(dim(samples$augmented_data$estimated_dates)[1:2],
+            n_samples * n_chains))
+  samples$augmented_data$error_indicators <-
+    array(samples$augmented_data$error_indicators,
+          c(dim(samples$augmented_data$error_indicators)[1:2],
+            n_samples * n_chains))
   
   attr(samples, "chain") <- chain
   

@@ -4,7 +4,8 @@ update_pars <- function(state_chain, control, model, rng) {
   
   state_chain <- update_prob_error(state_chain, model, rng)
   
-  state_chain$density <- model$likelihood(state_chain$pars) +
+  state_chain$density <- 
+    model$likelihood(state_chain$pars, state_chain$augmented_data) +
     model$prior(state_chain$pars)
   
   state_chain 
@@ -13,11 +14,10 @@ update_pars <- function(state_chain, control, model, rng) {
 
 update_pars_delay <- function(state_chain, control, model, rng) {
   
-  augmented_data <- 
-    model$data_packer$unpack(attr(state_chain$pars, "augmented_data"))
   
   for (i in seq_along(model$info$delay_info$distribution)) {
-    state_chain$pars <- update_pars_delay1(i, state_chain$pars, augmented_data,
+    state_chain$pars <- update_pars_delay1(i, state_chain$pars, 
+                                           state_chain$augmented_data,
                                            control, model, rng)
   }
   
@@ -218,17 +218,15 @@ update_log_normal_precisionlog_parameters <- function(meanlog, delay_values,
 update_prob_error <- function(state_chain, model, rng) {
   i <- model$parameters == "prob_error"
   
-  augmented_data <- 
-    model$data_packer$unpack(attr(state_chain$pars, "augmented_data"))
-  
   beta_pars <- 
-    update_prob_error_parameters(augmented_data$error_indicators,
+    update_prob_error_parameters(state_chain$augmented_data$error_indicators,
                                  model$hyperparameters)
   
   state_chain$pars[i] <- 
     monty::monty_random_beta(beta_pars$shape1, beta_pars$shape2, rng)
   
-  state_chain$density <- model$likelihood(state_chain$pars) +
+  state_chain$density <- 
+    model$likelihood(state_chain$pars, state_chain$augmented_data) +
     model$prior(state_chain$pars)
   
   state_chain

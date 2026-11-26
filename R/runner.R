@@ -75,24 +75,28 @@ run_chain2 <- function(chain_id, chain_state, model,
   
   history_pars <- matrix(NA_real_, n_pars, n_steps_record)
   history_density <- rep(NA_real_, n_steps_record)
-  n_augmented_data <- length(chain_state$augmented_data)
-  history_augmented_data <- matrix(NA_real_, n_augmented_data, n_steps_record)
-  attr(chain_state$pars, "augmented_data") <- chain_state$augmented_data
+  
+  
+  dim_est_dates <- dim(chain_state$augmented_data$estimated_dates)
+  dim_err_inds <- dim(chain_state$augmented_data$error_indicators)
+  history_augmented_data <- 
+    list(estimated_dates = array(NA_real_, c(dim_est_dates, n_steps_record)),
+         error_indicators = array(NA, c(dim_err_inds, n_steps_record)))
   
   history_full_chains <- list(pars = matrix(NA_real_, n_pars, n_steps),
                               density = rep(NA_real_, n_steps))
   
   j <- 1L
   for (i in seq_len(n_steps)) {
-    res <- model$augmented_data_update(chain_state$pars, rng)
-    chain_state$augmented_data <- res$augmented_data
-    chain_state$density <- res$density
-    attr(chain_state$pars, "augmented_data") <- res$augmented_data
+    chain_state <- model$augmented_data_update(chain_state, model, rng)
     chain_state <- update_pars(chain_state, control, model, rng)
     if (i > burnin && i %% thinning_factor == 0) {
       history_pars[, j] <- chain_state$pars
       history_density[[j]] <- chain_state$density
-      history_augmented_data[, j] <- chain_state$augmented_data
+      history_augmented_data$estimated_dates[, , j] <-
+        chain_state$augmented_data$estimated_dates
+      history_augmented_data$error_indicators[, , j] <-
+        chain_state$augmented_data$error_indicators
       j <- j + 1L
     }
     history_full_chains$pars[, i] <- chain_state$pars
@@ -121,10 +125,9 @@ run_chain2 <- function(chain_id, chain_state, model,
 
 
 initialise_state <- function(pars, model, rng) {
-  res <- model$augmented_data_update(pars, rng)
-  density <- res$density
-  augmented_data <- res$augmented_data
+  chain_state <- list(pars = pars)
   
-  list(pars = pars, augmented_data = augmented_data, 
-       density = density)
+  chain_state <- model$augmented_data_update(chain_state, model, rng)
+  
+  chain_state
 }
