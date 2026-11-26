@@ -28,7 +28,8 @@ Imports:
     ggtext,
     patchwork,
     testthat (>= 3.0.0),
-    scales
+    scales,
+    withr
 Suggests:
     coda,
     posterior
