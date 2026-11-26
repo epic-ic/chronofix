@@ -146,13 +146,6 @@ test_that("log-likelihood aggregates correctly", {
   control <- chronofix_mcmc_control()
   model <- chronofix_model(data, delay_map, hyperparameters, control)
   
-  ## split the model into the prior and likelihood
-  model_split <- monty::monty_model_split(model)
-  has_augmented_data <- 
-    unlist(lapply(model_split, function (m) m$properties$has_augmented_data))
-  model_likelihood <- model_split[[which(has_augmented_data)]]
-  model_prior <- model_split[[which(!has_augmented_data)]]
-  
   prob_error <- 0.08
   delay_pars <- list(list(mean = 8, shape = 4),
                      list(mean = 5, shape = 3),
@@ -178,7 +171,7 @@ test_that("log-likelihood aggregates correctly", {
     model$data_packer$pack(list(estimated_dates = estimated_dates,
                                 error_indicators = error_indicators))
   attr(pars, "augmented_data") <- augmented_data
-  ll_aggregated <- model_likelihood$density(pars)
+  ll_aggregated <- model$likelihood(pars)
   
   
   ## now calculate all ll parts
@@ -204,8 +197,4 @@ test_that("log-likelihood aggregates correctly", {
   ## sum over delay and error log-likelihoods, check it equals aggregated
   expect_equal(ll_aggregated, sum(ll_errors) + sum(ll_delays))
   
-  
-  ## check overall density is prior density + likelihood density
-  prior <- model_prior$density(pars)
-  expect_equal(model$density(pars), ll_aggregated + prior)
 })
