@@ -1,14 +1,13 @@
 runner_serial <- function(progress = NULL) {
-  run <- function(pars, model, control, steps, rng) {
+  run <- function(pars, model, control, rng) {
     n_chains <- length(rng)
-    pb <- progress_bar(n_chains, steps$total, progress, show_overall = TRUE)
+    pb <- progress_bar(n_chains, control$n_steps, progress, show_overall = TRUE)
     with_progress_fail_on_error(
       pb,
       lapply(
         seq_along(rng),
         function(i) {
-          run_chain(i, pars[, i], model, control, steps,
-                    pb$update, rng[[i]])
+          run_chain(i, pars[, i], model, control, pb$update, rng[[i]])
         }))
   }
   
@@ -18,7 +17,7 @@ runner_serial <- function(progress = NULL) {
 
 runner_parallel <- function(n_workers) {
   
-  run <- function(pars, model, control, steps, rng) {
+  run <- function(pars, model, control, rng) {
     n_chains <- length(rng)
     cl <- parallel::makeCluster(min(n_chains, n_workers))
     on.exit(parallel::stopCluster(cl))
@@ -26,8 +25,7 @@ runner_parallel <- function(n_workers) {
     rng_state <- lapply(rng, function(r) monty::monty_rng_state(r))
     
     args <- list(model = model,
-                 control = control,
-                 steps = steps)
+                 control = control)
     
     ## To debug issues in the parallel sampler, it's most efficient to
     ## replace this call with `Map` and drop the `cl` argument, then
@@ -44,34 +42,31 @@ runner_parallel <- function(n_workers) {
 }
 
 
-run_chain_parallel <- function(chain_id, pars, model, control, steps,
-                               rng) {
+run_chain_parallel <- function(chain_id, pars, model, control, rng) {
   rng <- monty::monty_rng_create(seed = rng)
   progress <- progress_bar_none()$update
-  run_chain(chain_id, pars, model, control, steps, progress, rng)
+  run_chain(chain_id, pars, model, control, progress, rng)
 }
 
 
-run_chain <- function(chain_id, pars, model, control, steps,
-                      progress, rng) {
+run_chain <- function(chain_id, pars, model, control, progress, rng) {
   r_rng_state <- get_r_rng_state()
   
   chain_state <- initialise_state(pars, model, rng)
   
-  run_chain2(chain_id, chain_state, model, control,
-             steps, progress, rng, r_rng_state)
+  run_chain2(chain_id, chain_state, model, control, progress, rng, r_rng_state)
 }
 
 
-run_chain2 <- function(chain_id, chain_state, model,
-                       control, steps, progress, rng, r_rng_state) {
+run_chain2 <- function(chain_id, chain_state, model, control,
+                       progress, rng, r_rng_state) {
   initial <- chain_state$pars
   n_pars <- length(model$parameters)
   
-  burnin <- steps$burnin
-  thinning_factor <- steps$thinning_factor
-  n_steps <- steps$total
-  n_steps_record <- ceiling((steps$total - burnin) / thinning_factor)
+  burnin <- control$burnin
+  thinning_factor <- control$thinning_factor
+  n_steps <- control$n_steps
+  n_steps_record <- ceiling((n_steps - burnin) / thinning_factor)
   
   history_pars <- matrix(NA_real_, n_pars, n_steps_record)
   history_density <- rep(NA_real_, n_steps_record)

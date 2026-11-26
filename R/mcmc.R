@@ -32,12 +32,10 @@ chronofix_mcmc <- function(data,
   parameters <- model$parameters
   
   rng <- initial_rng(control$n_chains)
-  steps <- mcmc_steps(control$n_steps, control$burnin, 
-                      control$thinning_factor)
   
   runner <- if (control$parallel) runner_parallel(control$n_workers) else
     runner_serial()
-  res <- runner$run(pars, model, control, steps, rng)
+  res <- runner$run(pars, model, control, rng)
   
   samples <- combine_chains(res, data, delay_map)
   
@@ -126,6 +124,8 @@ chronofix_mcmc_control <- function(n_steps = 1000,
                                    prob_update_error_indicators = 1,
                                    prob_error_swap = 1) {
   
+  validate_mcmc_steps(n_steps, burnin, thinning_factor)
+  
   list(n_steps = n_steps,
        burnin = burnin,
        thinning_factor = thinning_factor,
@@ -140,6 +140,23 @@ chronofix_mcmc_control <- function(n_steps = 1000,
        prob_update_estimated_dates = prob_update_estimated_dates,
        prob_update_error_indicators = prob_update_error_indicators,
        prob_error_swap = prob_error_swap)
+}
+
+
+validate_mcmc_steps <- function(n_steps, burnin, thinning_factor,
+                                call = parent.frame()) {
+  assert_scalar_size(n_steps, call = call)
+  assert_scalar_size(burnin, allow_zero = TRUE, call = call)
+  if (burnin >= n_steps) {
+    cli::cli_abort("'burnin' must be smaller than 'n_steps'",
+                   arg = "burnin", call = call)
+  }
+  assert_scalar_size(thinning_factor, allow_zero = FALSE, call = call)
+  if ((n_steps - burnin) %% thinning_factor != 0) {
+    cli::cli_abort(
+      "'thinning_factor' must be a divisor of ('n_steps' - 'burnin')",
+      call = call)
+  }
 }
 
 ##' Create initial parameter values
@@ -193,35 +210,6 @@ mcmc_pars_initialise <- function(model, initial) {
 }
 
 
-mcmc_steps <- function(n_steps, burnin = NULL, thinning_factor = NULL,
-                       call = parent.frame()) {
-  assert_scalar_size(n_steps, call = call)
-  if (is.null(burnin)) {
-    burnin <- 0
-  } else {
-    assert_scalar_size(burnin, allow_zero = TRUE, call = call)
-    if (burnin >= n_steps) {
-      cli::cli_abort("'burnin' must be smaller than 'n_steps'",
-                     arg = "burnin", call = call)
-    }
-  }
-  if (is.null(thinning_factor)) {
-    thinning_factor <- 1
-  } else {
-    assert_scalar_size(thinning_factor, allow_zero = FALSE, call = call)
-    if (n_steps %% thinning_factor != 0) {
-      cli::cli_abort(
-        "'thinning_factor' must be a divisor of 'n_steps'",
-        call = call)
-    }
-  }
-  
-  list(total = n_steps,
-       burnin = burnin,
-       thinning_factor = thinning_factor)
-}
-
-
 initial_rng <- function(n_chains, seed = NULL) {
   lapply(rng_distributed_state(n_nodes = n_chains, seed = seed),
          function(s) monty::monty_rng_create(seed = s))
@@ -243,9 +231,6 @@ rng_distributed_state <- function(seed = NULL, n_nodes = 1L) {
 
 ##' @importFrom abind abind
 combine_chains <- function(res, data, delay_map) {
-  if (inherits(res, "chronofix_mcmc_samples")) {
-    return(res)
-  }
   
   history <- lapply(res, "[[", "history")
   pars <- abind::abind(lapply(history, "[[", "pars"), along = 3)
