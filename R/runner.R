@@ -222,9 +222,9 @@ run_chain_manual <- function(chain_id, path, progress = NULL) {
     {
       pars <- inputs$pars
       model <- inputs$model
-      rng <- monty_rng_create(seed = inputs$rng_state[[chain_id]])
-      res <- monty_run_chain(chain_id, pars[, chain_id], model, control,
-                             pb$update, rng)
+      rng <- monty::monty_rng_create(seed = inputs$rng_state[[chain_id]])
+      res <- run_chain(chain_id, pars[, chain_id], model, control,
+                       pb$update, rng)
     }
   )
   
