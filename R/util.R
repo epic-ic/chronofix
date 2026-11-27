@@ -64,6 +64,10 @@ vnapply <- function(...) {
   vapply(..., FUN.VALUE = 1)
 }
 
+vcapply <- function(...) {
+  vapply(..., FUN.VALUE = "")
+}
+
 suggested_package_status <- function(pkg) {
   status <- ifelse(pkg %in% loadedNamespaces(), "loaded", "missing")
   i <- status == "missing"
@@ -80,4 +84,22 @@ set_names <- function(x, nms) {
   }
   names(x) <- nms
   x
+}
+
+
+get_r_rng_state <- function() {
+  if (exists(".Random.seed", globalenv(), inherits = FALSE)) {
+    get(".Random.seed", globalenv(), inherits = FALSE)
+  } else {
+    NULL
+  }
+}
+
+
+is_testing <- function() {
+  identical(Sys.getenv("TESTTHAT"), "true")
+}
+
+dir_create <- function(path) {
+  dir.create(path, FALSE, TRUE)
 }

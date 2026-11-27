@@ -31,41 +31,30 @@ test_that("update_prob_error updates correctly", {
   
   rng <- monty::monty_rng_create(1L)
   
-  x <- model$augmented_data_update(pars, rng)
-  attr(pars, "augmented_data") <- x$augmented_data
-  state_chain <- list(pars = pars,
-                      density = x$density)
+  chain_state <- model$augmented_data_update(list(pars = pars), model, rng)
   
-  new_state_chain <- update_prob_error(state_chain, model, rng)
+  new_chain_state <- update_prob_error(chain_state, model, rng)
   
   ## check the correct parameter is updated
   i <- which(parameters == "prob_error")
-  expect_true(new_state_chain$pars[i] != state_chain$pars[i])
-  expect_equal(new_state_chain$pars[-i], state_chain$pars[-i])
+  expect_true(new_chain_state$pars[i] != chain_state$pars[i])
+  expect_equal(new_chain_state$pars[-i], chain_state$pars[-i])
   
   
   ## edge cases
   ## No non-errors (FALSE), shape2 = 0 must result in 1
-  augmented_data <- 
-    model$data_packer$unpack(attr(state_chain$pars, "augmented_data"))
-  augmented_data$error_indicators[, ] <- TRUE
-  attr(state_chain$pars, "augmented_data") <- 
-    model$data_packer$pack(augmented_data)
+  chain_state$augmented_data$error_indicators[, ] <- TRUE
   model$hyperparameters <- list(prob_error_shape1 = 2,
                                 prob_error_shape2 = 0)
-  new_state_chain <- update_prob_error(state_chain, model, rng)
-  expect_equal(new_state_chain$pars[i], 1)
+  new_chain_state <- update_prob_error(chain_state, model, rng)
+  expect_equal(new_chain_state$pars[[i]], 1)
   
   ## No errors (TRUE), shape1 = 0 must result in 0
-  augmented_data <- 
-    model$data_packer$unpack(attr(state_chain$pars, "augmented_data"))
-  augmented_data$error_indicators[, ] <- FALSE
-  attr(state_chain$pars, "augmented_data") <- 
-    model$data_packer$pack(augmented_data)
+  chain_state$augmented_data$error_indicators[, ] <- FALSE
   model$hyperparameters <- list(prob_error_shape1 = 0,
                                 prob_error_shape2 = 3)
-  new_state_chain <- update_prob_error(state_chain, model, rng)
-  expect_equal(new_state_chain$pars[i], 0)
+  new_chain_state <- update_prob_error(chain_state, model, rng)
+  expect_equal(new_chain_state$pars[[i]], 0)
 })
 
 

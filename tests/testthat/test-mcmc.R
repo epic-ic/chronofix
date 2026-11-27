@@ -20,6 +20,28 @@ test_that("Can run mcmc", {
 })
 
 
+test_that("Can run mcmc in parallel", {
+  set.seed(1)
+  toy <- toy_data()
+  data <- toy$data$observed_data
+  delay_map <- toy$delay_map
+  
+  hyperparameters <- chronofix_hyperparameters()
+  initial <- chronofix_mcmc_initial()
+  
+  set.seed(1)
+  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 2)
+  samples <- chronofix_mcmc(data, delay_map, hyperparameters, initial, control)
+  
+  set.seed(1)
+  control <- chronofix_mcmc_control(n_steps = 50, n_chains = 2,
+                                    parallel = TRUE, n_workers = 2)
+  samples2 <- chronofix_mcmc(data, delay_map, hyperparameters, initial, control)
+  
+  expect_identical(samples, samples2)
+})
+
+
 test_that("Can run mcmc with single group and single delay", {
   set.seed(1)
   toy <- toy_data(single_group = "community-alive")
@@ -76,4 +98,42 @@ test_that("Can run mcmc with data prepared with chronofix_prepare_data", {
   samples2$data <- NULL
   samples2$full_chains$data <- NULL
   expect_identical(samples, samples2)
+})
+
+
+test_that("chronofix_mcmc_control validates mcmc steps correctly", {
+  expect_no_error(
+    chronofix_mcmc_control(n_steps = 1000, burnin = 500, thinning_factor = 50))
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = -1, burnin = 0, thinning_factor = 1),
+    "'n_steps' must be at least 0")
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = 10.5, burnin = 0, thinning_factor = 1),
+    "Expected 'n_steps' to be integer")
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = 1000, burnin = -1, thinning_factor = 1),
+    "'burnin' must be at least 0")
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = 1000, burnin = 0.5, thinning_factor = 1),
+    "Expected 'burnin' to be integer")
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = 1000, burnin = 2000, thinning_factor = 1),
+    "'burnin' must be smaller than 'n_steps'")
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = 1000, burnin = 0, thinning_factor = 0),
+    "'thinning_factor' must be at least 1")
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = 1000, burnin = 0, thinning_factor = 1.5),
+    "Expected 'thinning_factor' to be integer")
+  
+  expect_error(
+    chronofix_mcmc_control(n_steps = 1000, burnin = 0, thinning_factor = 3),
+    "'thinning_factor' must be a divisor")
 })

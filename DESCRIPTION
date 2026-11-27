@@ -1,6 +1,6 @@
 Package: chronofix
 Title: Probabilistic Line List Date Correction and Delay Estimation
-Version: 0.0.20
+Version: 0.0.21
 Authors@R: 
     c(person("Ed", "Knock", , "e.knock@imperial.ac.uk", role = c("aut", "cre")),
       person("Rebecca", "Nash", , "r.nash@imperial.ac.uk", role = c("aut")))
@@ -14,11 +14,13 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
     abind,
+    callr,
     cli,
     dplyr,
     generics,
     ggplot2,
     igraph,
+    mockery,
     monty (>= 0.4.0),
     openxlsx,
     purrr,
@@ -27,10 +29,11 @@ Imports:
     ggtext,
     patchwork,
     testthat (>= 3.0.0),
-    scales
+    scales,
+    withr
 Suggests:
     coda,
     posterior
 Config/testthat/edition: 3
-Remotes: mrc-ide/monty@mrc-6769
+Remotes: mrc-ide/monty
 Config/roxygen2/version: 8.1.1

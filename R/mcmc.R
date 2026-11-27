@@ -24,27 +24,24 @@ chronofix_mcmc <- function(data,
   data <- chronofix_prepare_data(data)
   
   model <- chronofix_model(data, delay_map, hyperparameters, control)
-  sampler <- chronofix_sampler(control)
   
   pars_initial <- mcmc_pars_initialise(model, initial)
+  pars <- matrix(pars_initial, length(model$parameters), 
+                 control$n_chains)
   
   parameters <- model$parameters
   
-  runner <- 
-    if (control$parallel) monty::monty_runner_callr(control$n_workers) else
-      monty::monty_runner_serial()
+  rng <- initial_rng(control$n_chains)
   
-  samples <- monty::monty_sample(model, sampler, control$n_steps,
-                                 initial = pars_initial,
-                                 n_chains = control$n_chains, runner = runner,
-                                 burnin = control$burnin, 
-                                 thinning_factor = control$thinning_factor,
-                                 save_full_chains = TRUE,
-                                 flatten_chains = TRUE)
+  runner <- if (control$parallel) runner_callr(control$n_workers) else
+    runner_serial()
+  res <- runner$run(pars, model, control, rng)
+  
+  samples <- combine_chains(res, data, delay_map)
+  
+  samples <- flatten_chains(samples)
   
   ## Unpack augmented data
-  samples$augmented_data <- 
-    unpack_augmented_data(samples$augmented_data, model$data_packer)
   id <- attr(data, "id")
   group <- attr(data, "group")
   rownames(samples$augmented_data$estimated_dates) <- data[[id]]
@@ -53,23 +50,6 @@ chronofix_mcmc <- function(data,
   rownames(samples$augmented_data$error_indicators) <- data[[id]]
   colnames(samples$augmented_data$error_indicators) <- 
     setdiff(names(data), c(id, group))
-  
-  samples$data <- data
-  samples$delay_map <- delay_map
-  
-  samples$details <- NULL
-  samples$observations <- NULL
-  samples$state <- NULL
-  
-  samples$full_chains$data <- data
-  samples$full_chains$delay_map <- delay_map
-  samples$full_chains$details <- NULL
-  samples$full_chains$observations <- NULL
-  samples$full_chains$state <- NULL
-  
-  class(samples$full_chains) <- "chronofix_mcmc_samples"
-  
-  class(samples) <- "chronofix_mcmc_samples"
   
   samples
   
@@ -144,6 +124,8 @@ chronofix_mcmc_control <- function(n_steps = 1000,
                                    prob_update_error_indicators = 1,
                                    prob_error_swap = 1) {
   
+  validate_mcmc_steps(n_steps, burnin, thinning_factor)
+  
   list(n_steps = n_steps,
        burnin = burnin,
        thinning_factor = thinning_factor,
@@ -158,6 +140,23 @@ chronofix_mcmc_control <- function(n_steps = 1000,
        prob_update_estimated_dates = prob_update_estimated_dates,
        prob_update_error_indicators = prob_update_error_indicators,
        prob_error_swap = prob_error_swap)
+}
+
+
+validate_mcmc_steps <- function(n_steps, burnin, thinning_factor,
+                                call = parent.frame()) {
+  assert_scalar_size(n_steps, call = call)
+  assert_scalar_size(burnin, allow_zero = TRUE, call = call)
+  if (burnin >= n_steps) {
+    cli::cli_abort("'burnin' must be smaller than 'n_steps'",
+                   arg = "burnin", call = call)
+  }
+  assert_scalar_size(thinning_factor, allow_zero = FALSE, call = call)
+  if ((n_steps - burnin) %% thinning_factor != 0) {
+    cli::cli_abort(
+      "'thinning_factor' must be a divisor of ('n_steps' - 'burnin')",
+      call = call)
+  }
 }
 
 ##' Create initial parameter values
@@ -208,4 +207,95 @@ mcmc_pars_initialise <- function(model, initial) {
     initial$initial_delay_precisionlog
   
   pars_initial
+}
+
+
+initial_rng <- function(n_chains, seed = NULL) {
+  lapply(rng_distributed_state(n_nodes = n_chains, seed = seed),
+         function(s) monty::monty_rng_create(seed = s))
+}
+
+
+rng_distributed_state <- function(seed = NULL, n_nodes = 1L) {
+  rng <- monty::monty_rng_create(seed = seed)
+  ret <- vector("list", n_nodes)
+  for (i in seq_len(n_nodes)) {
+    ret[[i]] <- monty::monty_rng_state(rng)
+    if (i < n_nodes) {
+      monty::monty_rng_long_jump(rng)
+    }
+  }
+  ret
+}
+
+
+##' @importFrom abind abind
+combine_chains <- function(res, data, delay_map) {
+  
+  history <- lapply(res, "[[", "history")
+  pars <- abind::abind(lapply(history, "[[", "pars"), along = 3)
+  density <- abind::abind(lapply(history, "[[", "density"), along = 2)
+  
+  initial <- abind::abind(lapply(res, "[[", "initial"), along = 2)
+  
+  augmented_data <- lapply(history, "[[", "augmented_data")
+  estimated_dates <- 
+    abind::abind(lapply(augmented_data, "[[", "estimated_dates"), along = 4)
+  error_indicators <- 
+    abind::abind(lapply(augmented_data, "[[", "error_indicators"), along = 4)
+  augmented_data <- list(estimated_dates = estimated_dates,
+                         error_indicators = error_indicators)
+  
+  full_chains <- lapply(history, "[[", "full_chains")
+  pars_full <- abind::abind(lapply(full_chains, "[[", "pars"), along = 3)
+  density_full <- abind::abind(lapply(full_chains, "[[", "density"), along = 2)
+  full_chains <- chronofix_samples(pars_full, density_full, initial, data,
+                                   delay_map)
+  
+  
+  chronofix_samples(pars, density, initial, data, delay_map, 
+                    augmented_data, full_chains)
+}
+
+
+flatten_chains <- function(samples) {
+  d <- dim(samples$pars)
+  par_nms <- rownames(samples$pars)
+  n_pars <- d[[1]]
+  n_samples <- d[[2]]
+  n_chains <- d[[3]]
+  
+  chain <- rep(seq_len(n_chains), each = n_samples)
+  
+  samples$pars <- array(samples$pars, c(n_pars, n_samples * n_chains),
+                        dimnames = list(par_nms, NULL))
+  samples$density <- c(samples$density)
+  samples$augmented_data$estimated_dates <-
+    array(samples$augmented_data$estimated_dates,
+          c(dim(samples$augmented_data$estimated_dates)[1:2],
+            n_samples * n_chains))
+  samples$augmented_data$error_indicators <-
+    array(samples$augmented_data$error_indicators,
+          c(dim(samples$augmented_data$error_indicators)[1:2],
+            n_samples * n_chains))
+  
+  attr(samples, "chain") <- chain
+  
+  samples
+}
+
+
+chronofix_samples <- function(pars, density, initial, data, delay_map,
+                              augmented_data = NULL, full_chains = NULL,
+                              flatten_chains = FALSE) {
+  rownames(initial) <- rownames(pars)
+  samples <- list(pars = pars,
+                  density = density,
+                  initial = initial,
+                  data = data,
+                  delay_map = delay_map,
+                  augmented_data = augmented_data,
+                  full_chains = full_chains)
+  class(samples) <- "chronofix_mcmc_samples"
+  samples
 }
