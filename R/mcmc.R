@@ -33,7 +33,7 @@ chronofix_mcmc <- function(data,
   
   rng <- initial_rng(control$n_chains)
   
-  runner <- if (control$parallel) runner_parallel(control$n_workers) else
+  runner <- if (control$parallel) runner_callr(control$n_workers) else
     runner_serial()
   res <- runner$run(pars, model, control, rng)
   

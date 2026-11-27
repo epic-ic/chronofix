@@ -64,6 +64,10 @@ vnapply <- function(...) {
   vapply(..., FUN.VALUE = 1)
 }
 
+vcapply <- function(...) {
+  vapply(..., FUN.VALUE = "")
+}
+
 suggested_package_status <- function(pkg) {
   status <- ifelse(pkg %in% loadedNamespaces(), "loaded", "missing")
   i <- status == "missing"
@@ -89,4 +93,9 @@ get_r_rng_state <- function() {
   } else {
     NULL
   }
+}
+
+
+dir_create <- function(path) {
+  dir.create(path, FALSE, TRUE)
 }
