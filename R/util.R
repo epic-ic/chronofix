@@ -96,6 +96,10 @@ get_r_rng_state <- function() {
 }
 
 
+is_testing <- function() {
+  identical(Sys.getenv("TESTTHAT"), "true")
+}
+
 dir_create <- function(path) {
   dir.create(path, FALSE, TRUE)
 }
